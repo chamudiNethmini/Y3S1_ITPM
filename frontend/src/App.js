@@ -1,8 +1,14 @@
 import "./App.css";
 import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
+
 import AdminLogin from "./pages/AdminLogin";
 import CoordinatorLogin from "./pages/CoordinatorLogin";
 import LecturerLogin from "./pages/LecturerLogin";
+
+import ProtectedRoute from "./components/ProtectedRoute";
+import AdminDashboard from "./pages/AdminDashboard";
+import CoordinatorDashboard from "./pages/CoordinatorDashboard";
+import LecturerDashboard from "./pages/LecturerDashboard";
 
 function Home() {
   const navigate = useNavigate();
@@ -50,6 +56,37 @@ function App() {
         <Route path="/admin" element={<AdminLogin />} />
         <Route path="/coordinator" element={<CoordinatorLogin />} />
         <Route path="/lecturer" element={<LecturerLogin />} />
+
+        {/* 🔐 Protected Admin Dashboard Route */}
+        <Route
+          path="/admin-dashboard"
+          element={
+            <ProtectedRoute allowedRole="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 🔐 Protected Coordinator Dashboard Route */}
+        <Route
+          path="/coordinator-dashboard"
+          element={
+            <ProtectedRoute allowedRole="coordinator">
+              <CoordinatorDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 🔐 Protected Lecturer Dashboard Route */}
+        <Route
+          path="/lecturer-dashboard"
+          element={
+            <ProtectedRoute allowedRole="lecturer">
+              <LecturerDashboard />
+            </ProtectedRoute>
+          }
+        />
+
       </Routes>
     </Router>
   );
