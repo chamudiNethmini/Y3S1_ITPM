@@ -1,34 +1,34 @@
 const express = require("express");
 const router = express.Router();
-const User = require("../models/User");
 
+// ================= IMPORTS =================
+
+// Controllers
 const {
   login,
   createUser,
   getAllUsers,
   updateUserStatus,
-  deleteUser
+  deleteUser,
+  getAuditLogs
 } = require("../controllers/authController");
 
+// Middleware
 const {
   verifyToken,
   authorizeRoles
 } = require("../middleware/authMiddleware");
 
 
-// =============================
-// PUBLIC ROUTE
-// =============================
+// ================= PUBLIC ROUTES =================
 
-// Login route (no token required)
+// Login (no token required)
 router.post("/login", login);
 
 
-// =============================
-// ADMIN ONLY ROUTES
-// =============================
+// ================= ADMIN ONLY ROUTES =================
 
-// Create new user
+// Create user
 router.post(
   "/create-user",
   verifyToken,
@@ -60,34 +60,12 @@ router.delete(
   deleteUser
 );
 
-
-// =============================
-// (Optional) Legacy status route - REMOVE if not needed
-// =============================
-
-// You already have updateUserStatus in controller,
-// so this route is not needed anymore.
-// If you keep it, protect it too:
-
-router.put(
-  "/status/:id",
+// Audit Logs (Admin only)
+router.get(
+  "/audit-logs",
   verifyToken,
   authorizeRoles("admin"),
-  async (req, res) => {
-    try {
-      const { status } = req.body;
-
-      const updatedUser = await User.findByIdAndUpdate(
-        req.params.id,
-        { status },
-        { new: true }
-      );
-
-      res.json(updatedUser);
-    } catch (error) {
-      res.status(500).json({ message: "Server error" });
-    }
-  }
+  getAuditLogs
 );
 
 module.exports = router;

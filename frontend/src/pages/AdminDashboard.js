@@ -8,11 +8,12 @@ function AdminDashboard() {
   // ===========================
 
   const [users, setUsers] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("lecturer");
+  const [role, setRole] = useState("lic");
 
   // ===========================
   // FETCH USERS
@@ -28,26 +29,43 @@ function AdminDashboard() {
   };
 
   // ===========================
+  // FETCH AUDIT LOGS
+  // ===========================
+
+  const fetchAuditLogs = async () => {
+    try {
+      const res = await API.get("/auth/audit-logs");
+      setAuditLogs(res.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // ===========================
   // CREATE USER
   // ===========================
 
   const handleCreateUser = async () => {
-  try {
-    console.log("Sending role:", role);
+    try {
+      await API.post("/auth/create-user", {
+        name,
+        email,
+        password,
+        role,
+      });
 
-    await API.post("/auth/create-user", {
-      name,
-      email,
-      password,
-      role,
-    });
+      setName("");
+      setEmail("");
+      setPassword("");
+      setRole("lic");
 
-    fetchUsers();
-  } catch (error) {
-    console.log("FULL ERROR:", error.response?.data);
-    alert(error.response?.data?.message || "Error creating user");
-  }
-};
+      fetchUsers();
+      fetchAuditLogs();
+
+    } catch (error) {
+      alert(error.response?.data?.message || "Error creating user");
+    }
+  };
 
   // ===========================
   // DELETE USER
@@ -57,6 +75,7 @@ function AdminDashboard() {
     try {
       await API.delete(`/auth/delete-user/${id}`);
       fetchUsers();
+      fetchAuditLogs();
     } catch (error) {
       alert(error.response?.data?.message || "Error deleting user");
     }
@@ -76,6 +95,8 @@ function AdminDashboard() {
       });
 
       fetchUsers();
+      fetchAuditLogs();
+
     } catch (error) {
       console.log(error);
     }
@@ -87,6 +108,7 @@ function AdminDashboard() {
 
   useEffect(() => {
     fetchUsers();
+    fetchAuditLogs();
   }, []);
 
   return (
@@ -121,11 +143,11 @@ function AdminDashboard() {
           onChange={(e) => setPassword(e.target.value)}
         />
 
-    <select value={role} onChange={(e) => setRole(e.target.value)}>
-  <option value="lecturer">LIC</option>
-  <option value="coordinator">Coordinator</option>
-  <option value="admin">Admin</option>
-</select>
+        <select value={role} onChange={(e) => setRole(e.target.value)}>
+          <option value="lecture">LIC</option>
+          <option value="coordinator">Coordinator</option>
+          <option value="admin">Admin</option>
+        </select>
 
         <button onClick={handleCreateUser}>
           Create
@@ -135,6 +157,8 @@ function AdminDashboard() {
       {/* ===========================
           USER TABLE
       ============================ */}
+
+      <h3>Users</h3>
 
       <table border="1" cellPadding="10">
         <thead>
@@ -155,8 +179,6 @@ function AdminDashboard() {
               <td>{user.role}</td>
               <td>{user.status}</td>
               <td>
-
-                {/* Suspend / Activate */}
                 <button
                   onClick={() =>
                     handleStatusChange(user._id, user.status)
@@ -167,7 +189,6 @@ function AdminDashboard() {
                     : "Activate"}
                 </button>
 
-                {/* Delete (No Admin Delete) */}
                 {user.role !== "admin" && (
                   <button
                     style={{ marginLeft: "10px", color: "red" }}
@@ -176,12 +197,48 @@ function AdminDashboard() {
                     Delete
                   </button>
                 )}
-
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      {/* ===========================
+          AUDIT LOG TABLE
+      ============================ */}
+
+      <h3 style={{ marginTop: "40px" }}>Audit Logs</h3>
+
+      <table border="1" cellPadding="10">
+        <thead>
+          <tr>
+            <th>Action</th>
+            <th>Performed By</th>
+            <th>Target User</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {auditLogs.map((log) => (
+            <tr key={log._id}>
+              <td>{log.action}</td>
+              <td>
+                {log.performedBy
+                  ? `${log.performedBy.name} (${log.performedBy.email})`
+                  : "N/A"}
+              </td>
+              <td>
+                {log.targetUser
+                  ? `${log.targetUser.name} (${log.targetUser.email})`
+                  : "N/A"}
+              </td>
+              <td>{new Date(log.timestamp).toLocaleString()}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
     </div>
   );
 }

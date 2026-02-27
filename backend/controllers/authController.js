@@ -1,40 +1,33 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const AuditLog = require("../models/AuditLog");
 
+
+// =========================
+// LOGIN
+// =========================
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    console.log("===== LOGIN ATTEMPT =====");
-    console.log("Entered Email:", email);
-    console.log("Entered Password:", password);
-
     const user = await User.findOne({ email });
-    console.log("User found:", user);
 
     if (!user) {
-      console.log("❌ User not found");
       return res.status(400).json({ message: "User not found" });
     }
 
     if (user.status !== "active") {
-      console.log("❌ Account not active");
       return res.status(403).json({ message: "Account not active" });
     }
 
-    console.log("Stored Hashed Password:", user.password);
-
     const isMatch = await bcrypt.compare(password.trim(), user.password);
-    console.log("Password match result:", isMatch);
 
     if (!isMatch) {
-      console.log("❌ Invalid password");
       return res.status(400).json({ message: "Invalid password" });
     }
 
     if (!process.env.JWT_SECRET) {
-      console.log("❌ JWT_SECRET missing in .env");
       return res.status(500).json({ message: "Server config error" });
     }
 
@@ -44,8 +37,12 @@ exports.login = async (req, res) => {
       { expiresIn: "1d" }
     );
 
-    console.log("✅ Login success");
-    console.log("========================");
+    // 🔥 AUDIT LOG
+    await AuditLog.create({
+      action: "User Logged In",
+      performedBy: user._id,
+      targetUser: user._id
+    });
 
     res.json({
       token,
@@ -53,11 +50,15 @@ exports.login = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("🔥 Login error:", error);
+    console.error("Login error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
+
+// =========================
+// CREATE USER
+// =========================
 exports.createUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -77,6 +78,13 @@ exports.createUser = async (req, res) => {
       status: "pending"
     });
 
+    // 🔥 AUDIT LOG
+    await AuditLog.create({
+      action: "User Created",
+      performedBy: req.user?.id,
+      targetUser: newUser._id
+    });
+
     res.status(201).json({
       message: "User created successfully",
       user: newUser
@@ -88,6 +96,10 @@ exports.createUser = async (req, res) => {
   }
 };
 
+
+// =========================
+// GET ALL USERS
+// =========================
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select("-password");
@@ -97,6 +109,10 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
+
+// =========================
+// UPDATE STATUS
+// =========================
 exports.updateUserStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -106,6 +122,13 @@ exports.updateUserStatus = async (req, res) => {
       { status },
       { new: true }
     ).select("-password");
+
+    // 🔥 AUDIT LOG
+    await AuditLog.create({
+      action: `User status changed to ${status}`,
+      performedBy: req.user.id,
+      targetUser: user._id
+    });
 
     res.json({
       message: "Status updated successfully",
@@ -117,6 +140,10 @@ exports.updateUserStatus = async (req, res) => {
   }
 };
 
+
+// =========================
+// DELETE USER
+// =========================
 exports.deleteUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -125,15 +152,38 @@ exports.deleteUser = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Prevent deleting admin
     if (user.role === "admin") {
       return res.status(403).json({ message: "Admin cannot be deleted" });
     }
 
     await User.findByIdAndDelete(req.params.id);
 
+    // 🔥 AUDIT LOG
+    await AuditLog.create({
+      action: "User Deleted",
+      performedBy: req.user.id,
+      targetUser: user._id
+    });
+
     res.json({ message: "User deleted successfully" });
 
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+// =========================
+// GET AUDIT LOGS
+// =========================
+exports.getAuditLogs = async (req, res) => {
+  try {
+    const logs = await AuditLog.find()
+      .populate("performedBy", "name email")
+      .populate("targetUser", "name email")
+      .sort({ timestamp: -1 });
+
+    res.json(logs);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
