@@ -2,7 +2,7 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const AuditLog = require("../models/AuditLog");
-
+const crypto = require("crypto");
 
 // =========================
 // LOGIN
@@ -62,6 +62,8 @@ exports.login = async (req, res) => {
 exports.createUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
+    
+    console.log("Incoming role:", role);
 
     const existing = await User.findOne({ email });
     if (existing) {
@@ -184,6 +186,61 @@ exports.getAuditLogs = async (req, res) => {
       .sort({ timestamp: -1 });
 
     res.json(logs);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const token = crypto.randomBytes(32).toString("hex");
+
+    user.resetToken = token;
+    user.resetTokenExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes
+
+    await user.save();
+
+    res.json({
+      message: "Password reset token generated",
+      token // (later email ekata yawamu)
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    const user = await User.findOne({
+      resetToken: token,
+      resetTokenExpiry: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    user.password = hashedPassword;
+    user.resetToken = undefined;
+    user.resetTokenExpiry = undefined;
+
+    await user.save();
+
+    res.json({ message: "Password reset successful" });
+
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
