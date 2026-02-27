@@ -4,8 +4,13 @@ const userSchema = new mongoose.Schema({
   name: String,
   email: { type: String, unique: true },
   password: String,
-  role: { type: String, enum: ["admin", "coordinator", "lecture"] },
-  status: { type: String, enum: ["pending", "active", "suspended"], default: "active" }
+  role: { type: String, enum: ["admin", "coordinator", "lic"] },
+  status: { type: String, enum: ["pending", "active", "suspended"], default: "active" },
+
+
+resetToken: String,
+resetTokenExpiry: Date,
 });
+
 
 module.exports = mongoose.model("User", userSchema);

@@ -10,8 +10,13 @@ const {
   getAllUsers,
   updateUserStatus,
   deleteUser,
-  getAuditLogs
+  getAuditLogs,
+  forgotPassword,
+  resetPassword
 } = require("../controllers/authController");
+
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 
 // Middleware
 const {
