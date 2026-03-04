@@ -5,6 +5,11 @@ const cors = require("cors");
 const connectDB = require('./config/db');
 const app = express();
 
+
+const ticketRoutes = require("./routes/ticketRoutes");
+
+app.use("/api/tickets", ticketRoutes);
+
 app.use(cors());
 app.use(express.json());
 connectDB();
