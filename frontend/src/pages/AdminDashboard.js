@@ -81,6 +81,8 @@ function AdminDashboard() {
     }
   };
 
+  
+
   // ===========================
   // TOGGLE STATUS
   // ===========================
@@ -93,6 +95,8 @@ function AdminDashboard() {
       await API.put(`/auth/update-status/${id}`, {
         status: newStatus,
       });
+
+      
 
       fetchUsers();
       fetchAuditLogs();
@@ -144,8 +148,8 @@ function AdminDashboard() {
         />
 
         <select value={role} onChange={(e) => setRole(e.target.value)}>
-          <option value="lecture">LIC</option>
-          <option value="coordinator">Coordinator</option>
+          <option value="lic">LIC</option>
+          <option value="coordinator">Academic Coordinator</option>
           <option value="admin">Admin</option>
         </select>
 

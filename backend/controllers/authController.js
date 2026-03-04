@@ -2,11 +2,40 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const AuditLog = require("../models/AuditLog");
+const crypto = require("crypto");
 
 
-// =========================
+// UPDATE ROLE
+
+exports.updateUserRole = async (req, res) => {
+  try {
+    const { role } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { role },
+      { new: true }
+    ).select("-password");
+
+    await AuditLog.create({
+      action: `User role changed to ${role}`,
+      performedBy: req.user.id,
+      targetUser: user._id
+    });
+
+    res.json({
+      message: "Role updated successfully",
+      user
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
 // LOGIN
-// =========================
+
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -17,9 +46,13 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "User not found" });
     }
 
-    if (user.status !== "active") {
-      return res.status(403).json({ message: "Account not active" });
-    }
+    if (user.status === "pending") {
+      return res.status(403).json({ message: "Account pending approval" });
+}
+
+    if (user.status === "suspended") {
+      return res.status(403).json({ message: "Account suspended" });
+}
 
     const isMatch = await bcrypt.compare(password.trim(), user.password);
 
@@ -37,7 +70,7 @@ exports.login = async (req, res) => {
       { expiresIn: "1d" }
     );
 
-    // 🔥 AUDIT LOG
+    //  AUDIT LOG
     await AuditLog.create({
       action: "User Logged In",
       performedBy: user._id,
@@ -56,12 +89,14 @@ exports.login = async (req, res) => {
 };
 
 
-// =========================
+
 // CREATE USER
-// =========================
+
 exports.createUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
+    
+    console.log("Incoming role:", role);
 
     const existing = await User.findOne({ email });
     if (existing) {
@@ -78,7 +113,7 @@ exports.createUser = async (req, res) => {
       status: "pending"
     });
 
-    // 🔥 AUDIT LOG
+    //  AUDIT LOG
     await AuditLog.create({
       action: "User Created",
       performedBy: req.user?.id,
@@ -97,9 +132,9 @@ exports.createUser = async (req, res) => {
 };
 
 
-// =========================
+
 // GET ALL USERS
-// =========================
+
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select("-password");
@@ -110,9 +145,9 @@ exports.getAllUsers = async (req, res) => {
 };
 
 
-// =========================
+
 // UPDATE STATUS
-// =========================
+
 exports.updateUserStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -123,7 +158,7 @@ exports.updateUserStatus = async (req, res) => {
       { new: true }
     ).select("-password");
 
-    // 🔥 AUDIT LOG
+    //  AUDIT LOG
     await AuditLog.create({
       action: `User status changed to ${status}`,
       performedBy: req.user.id,
@@ -141,9 +176,9 @@ exports.updateUserStatus = async (req, res) => {
 };
 
 
-// =========================
+
 // DELETE USER
-// =========================
+
 exports.deleteUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -158,7 +193,7 @@ exports.deleteUser = async (req, res) => {
 
     await User.findByIdAndDelete(req.params.id);
 
-    // 🔥 AUDIT LOG
+    //  AUDIT LOG
     await AuditLog.create({
       action: "User Deleted",
       performedBy: req.user.id,
@@ -173,9 +208,9 @@ exports.deleteUser = async (req, res) => {
 };
 
 
-// =========================
+
 // GET AUDIT LOGS
-// =========================
+
 exports.getAuditLogs = async (req, res) => {
   try {
     const logs = await AuditLog.find()
@@ -184,6 +219,87 @@ exports.getAuditLogs = async (req, res) => {
       .sort({ timestamp: -1 });
 
     res.json(logs);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const token = crypto.randomBytes(32).toString("hex");
+
+    user.resetToken = token;
+    user.resetTokenExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes
+
+    await user.save();
+
+    res.json({
+      message: "Password reset token generated",
+      token // (later email ekata yawamu)
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    const user = await User.findOne({
+      resetToken: token,
+      resetTokenExpiry: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    user.password = hashedPassword;
+    user.resetToken = undefined;
+    user.resetTokenExpiry = undefined;
+
+    await user.save();
+
+    res.json({ message: "Password reset successful" });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.updateUserRole = async (req, res) => {
+  try {
+    const { role } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { role },
+      { new: true }
+    ).select("-password");
+
+    await AuditLog.create({
+      action: `User role changed to ${role}`,
+      performedBy: req.user.id,
+      targetUser: user._id
+    });
+
+    res.json({
+      message: "Role updated successfully",
+      user
+    });
+
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }

@@ -1,17 +1,23 @@
 const express = require("express");
 const router = express.Router();
 
-// ================= IMPORTS =================
+// IMPORTS 
 
 // Controllers
 const {
+  updateUserRole,
   login,
   createUser,
   getAllUsers,
   updateUserStatus,
   deleteUser,
-  getAuditLogs
+  getAuditLogs,
+  forgotPassword,
+  resetPassword
 } = require("../controllers/authController");
+
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 
 // Middleware
 const {
@@ -67,5 +73,20 @@ router.get(
   authorizeRoles("admin"),
   getAuditLogs
 );
+
+router.put(
+  "/update-role/:id",
+  verifyToken,
+  authorizeRoles("admin"),
+  updateUserRole
+);
+
+router.put(
+  "/update-role/:id",
+  verifyToken,
+  authorizeRoles("admin"),
+  updateUserRole
+);
+
 
 module.exports = router;

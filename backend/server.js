@@ -12,10 +12,6 @@ app.use("/api/tickets", ticketRoutes);
 
 app.use(cors());
 app.use(express.json());
-
-
-
-
 connectDB();
 app.get("/", (req, res) => {
   res.send("🚀 Unimate Backend Server Running...");
