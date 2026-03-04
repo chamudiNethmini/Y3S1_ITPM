@@ -1,0 +1,190 @@
+const User = require("../models/User");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const AuditLog = require("../models/AuditLog");
+
+
+// =========================
+// LOGIN
+// =========================
+exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    if (user.status !== "active") {
+      return res.status(403).json({ message: "Account not active" });
+    }
+
+    const isMatch = await bcrypt.compare(password.trim(), user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid password" });
+    }
+
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({ message: "Server config error" });
+    }
+
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    // 🔥 AUDIT LOG
+    await AuditLog.create({
+      action: "User Logged In",
+      performedBy: user._id,
+      targetUser: user._id
+    });
+
+    res.json({
+      token,
+      role: user.role
+    });
+
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+// =========================
+// CREATE USER
+// =========================
+exports.createUser = async (req, res) => {
+  try {
+    const { name, email, password, role } = req.body;
+
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      role,
+      status: "pending"
+    });
+
+    // 🔥 AUDIT LOG
+    await AuditLog.create({
+      action: "User Created",
+      performedBy: req.user?.id,
+      targetUser: newUser._id
+    });
+
+    res.status(201).json({
+      message: "User created successfully",
+      user: newUser
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+// =========================
+// GET ALL USERS
+// =========================
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find().select("-password");
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+// =========================
+// UPDATE STATUS
+// =========================
+exports.updateUserStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    ).select("-password");
+
+    // 🔥 AUDIT LOG
+    await AuditLog.create({
+      action: `User status changed to ${status}`,
+      performedBy: req.user.id,
+      targetUser: user._id
+    });
+
+    res.json({
+      message: "Status updated successfully",
+      user
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+// =========================
+// DELETE USER
+// =========================
+exports.deleteUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.role === "admin") {
+      return res.status(403).json({ message: "Admin cannot be deleted" });
+    }
+
+    await User.findByIdAndDelete(req.params.id);
+
+    // 🔥 AUDIT LOG
+    await AuditLog.create({
+      action: "User Deleted",
+      performedBy: req.user.id,
+      targetUser: user._id
+    });
+
+    res.json({ message: "User deleted successfully" });
+
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+// =========================
+// GET AUDIT LOGS
+// =========================
+exports.getAuditLogs = async (req, res) => {
+  try {
+    const logs = await AuditLog.find()
+      .populate("performedBy", "name email")
+      .populate("targetUser", "name email")
+      .sort({ timestamp: -1 });
+
+    res.json(logs);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
