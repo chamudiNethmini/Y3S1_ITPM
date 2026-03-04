@@ -1,16 +1,25 @@
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
-  name: String,
-  email: { type: String, unique: true },
-  password: String,
-  role: { type: String, enum: ["admin", "coordinator", "lic"] },
-  status: { type: String, enum: ["pending", "active", "suspended"], default: "active" },
+  name: { type: String, required: true },
+  email: { type: String, unique: true, required: true },
+  password: { type: String, required: true },
 
+  role: { 
+    type: String, 
+    enum: ["admin", "coordinator", "lic"],
+    required: true
+  },
 
-resetToken: String,
-resetTokenExpiry: Date,
-});
+  status: { 
+    type: String, 
+    enum: ["pending", "active", "suspended"],
+    default: "pending"
+  },
 
+  resetToken: String,
+  resetTokenExpiry: Date,
+
+}, { timestamps: true });   
 
 module.exports = mongoose.model("User", userSchema);

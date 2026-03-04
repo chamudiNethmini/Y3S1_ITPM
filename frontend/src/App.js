@@ -81,7 +81,7 @@ function App() {
         <Route
           path="/lecturer-dashboard"
           element={
-            <ProtectedRoute allowedRole="lecturer">
+            <ProtectedRoute allowedRole="lic">
               <LecturerDashboard />
             </ProtectedRoute>
           }

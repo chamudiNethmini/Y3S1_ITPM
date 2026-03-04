@@ -81,6 +81,8 @@ function AdminDashboard() {
     }
   };
 
+  
+
   // ===========================
   // TOGGLE STATUS
   // ===========================
@@ -93,6 +95,8 @@ function AdminDashboard() {
       await API.put(`/auth/update-status/${id}`, {
         status: newStatus,
       });
+
+      
 
       fetchUsers();
       fetchAuditLogs();
