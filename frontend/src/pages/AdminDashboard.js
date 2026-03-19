@@ -242,7 +242,7 @@ function AdminDashboard() {
                     style={{ marginLeft: "10px", color: "red" }}
                     onClick={() => handleDelete(user._id)}
                   >
-                    Delete
+                    Deleted
                   </button>
                 )}
               </td>
