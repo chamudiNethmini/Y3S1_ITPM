@@ -3,9 +3,9 @@ import API from "../services/api";
 
 function AdminDashboard() {
 
-  // ===========================
+  
   // STATES
-  // ===========================
+  
 
   const [users, setUsers] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
@@ -15,9 +15,9 @@ function AdminDashboard() {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("lic");
 
-  // ===========================
+  
   // FETCH USERS
-  // ===========================
+  
 
   const fetchUsers = async () => {
     try {
@@ -28,9 +28,9 @@ function AdminDashboard() {
     }
   };
 
-  // ===========================
+  
   // FETCH AUDIT LOGS
-  // ===========================
+  
 
   const fetchAuditLogs = async () => {
     try {
@@ -41,9 +41,9 @@ function AdminDashboard() {
     }
   };
 
-  // ===========================
+  
   // CREATE USER
-  // ===========================
+  
 
   const handleCreateUser = async () => {
     try {
@@ -67,9 +67,9 @@ function AdminDashboard() {
     }
   };
 
-  // ===========================
+  
   // DELETE USER
-  // ===========================
+  
 
   const handleDelete = async (id) => {
     try {
@@ -83,9 +83,9 @@ function AdminDashboard() {
 
   
 
-  // ===========================
+  
   // TOGGLE STATUS
-  // ===========================
+  
 
   const handleStatusChange = async (id, currentStatus) => {
     try {
@@ -106,9 +106,9 @@ function AdminDashboard() {
     }
   };
 
-  // ===========================
+  
   // LOAD ON START
-  // ===========================
+  
 
   useEffect(() => {
     fetchUsers();
