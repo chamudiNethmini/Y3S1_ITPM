@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import API from "../services/api";
+import { useNavigate } from "react-router-dom";
 
 function AdminDashboard() {
 
@@ -9,6 +10,7 @@ function AdminDashboard() {
 
   const [users, setUsers] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
+  const [tickets, setTickets] = useState([]);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -16,8 +18,17 @@ function AdminDashboard() {
   const [role, setRole] = useState("lic");
 
   
+  // store reply text per ticket
+  const [replyTexts, setReplyTexts] = useState({});
+  const navigate = useNavigate();
+
+  // ===========================
   // FETCH USERS
   
+
+  <button onClick={() => navigate("/tickets")}>
+  Go to Ticket Dashboard
+</button>
 
   const fetchUsers = async () => {
     try {
@@ -42,6 +53,20 @@ function AdminDashboard() {
   };
 
   
+  // ===========================
+  // FETCH TICKETS
+  // ===========================
+
+  const fetchTickets = async () => {
+    try {
+      const res = await API.get("/tickets/all");
+      setTickets(res.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // ===========================
   // CREATE USER
   
 
@@ -61,7 +86,6 @@ function AdminDashboard() {
 
       fetchUsers();
       fetchAuditLogs();
-
     } catch (error) {
       alert(error.response?.data?.message || "Error creating user");
     }
@@ -84,6 +108,7 @@ function AdminDashboard() {
   
 
   
+  // ===========================
   // TOGGLE STATUS
   
 
@@ -96,11 +121,40 @@ function AdminDashboard() {
         status: newStatus,
       });
 
-      
-
       fetchUsers();
       fetchAuditLogs();
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
+  // ===========================
+  // HANDLE REPLY INPUT CHANGE
+  // ===========================
+
+  const handleReplyChange = (ticketId, value) => {
+    setReplyTexts({
+      ...replyTexts,
+      [ticketId]: value,
+    });
+  };
+
+  // ===========================
+  // REPLY TO TICKET
+  // ===========================
+
+  const handleReply = async (id) => {
+    try {
+      await API.put(`/tickets/reply/${id}`, {
+        reply: replyTexts[id],
+      });
+
+      setReplyTexts({
+        ...replyTexts,
+        [id]: "",
+      });
+
+      fetchTickets();
     } catch (error) {
       console.log(error);
     }
@@ -113,6 +167,7 @@ function AdminDashboard() {
   useEffect(() => {
     fetchUsers();
     fetchAuditLogs();
+    fetchTickets();
   }, []);
 
   return (
@@ -198,7 +253,7 @@ function AdminDashboard() {
                     style={{ marginLeft: "10px", color: "red" }}
                     onClick={() => handleDelete(user._id)}
                   >
-                    Delete
+                    Deleted
                   </button>
                 )}
               </td>
@@ -238,6 +293,59 @@ function AdminDashboard() {
                   : "N/A"}
               </td>
               <td>{new Date(log.timestamp).toLocaleString()}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {/* ===========================
+          TICKETS TABLE
+      ============================ */}
+
+      <h3 style={{ marginTop: "40px" }}>Tickets</h3>
+
+      <table border="1" cellPadding="10">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Subject</th>
+            <th>Message</th>
+            <th>Sender</th>
+            <th>Status</th>
+            <th>Reply</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {tickets.map((ticket) => (
+            <tr key={ticket._id}>
+              <td>{ticket.ticketId}</td>
+              <td>{ticket.subject}</td>
+              <td>{ticket.message}</td>
+              <td>{ticket.sender?.name}</td>
+              <td>{ticket.status}</td>
+              <td>{ticket.reply}</td>
+              <td>
+                {ticket.status === "pending" && (
+                  <>
+                    <input
+                      type="text"
+                      placeholder="Reply"
+                      value={replyTexts[ticket._id] || ""}
+                      onChange={(e) =>
+                        handleReplyChange(ticket._id, e.target.value)
+                      }
+                    />
+                    <button
+                      onClick={() => handleReply(ticket._id)}
+                      style={{ marginLeft: "5px" }}
+                    >
+                      Reply
+                    </button>
+                  </>
+                )}
+              </td>
             </tr>
           ))}
         </tbody>
