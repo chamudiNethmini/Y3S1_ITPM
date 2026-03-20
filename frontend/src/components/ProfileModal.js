@@ -45,33 +45,39 @@ function ProfileModal({ onClose }) {
 
   return (
     <div className="modal-overlay">
-
-      <div className="modal-box">
-
         <button className="close-btn" onClick={onClose}>❌</button>
-                 <>br</>
+      <div className="modal-box profile-card">
+        
+        
+
         <h2>My Profile</h2>
 
-        <label>Email</label>
-        <input value={user.email || ""} disabled />
+        <div className="profile-group">
+          <label>Email</label>
+          <input value={user.email || ""} disabled />
+        </div>
 
         <h3>Change Password</h3>
 
-        <input
-          type="password"
-          placeholder="Old Password"
-          value={oldPassword}
-          onChange={(e) => setOldPassword(e.target.value)}
-        />
+        <div className="profile-group">
+          <input
+            type="password"
+            placeholder="Old Password"
+            value={oldPassword}
+            onChange={(e) => setOldPassword(e.target.value)}
+          />
+        </div>
 
-        <input
-          type="password"
-          placeholder="New Password"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-        />
+        <div className="profile-group">
+          <input
+            type="password"
+            placeholder="New Password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+          />
+        </div>
 
-        <button onClick={handleChangePassword}>
+        <button className="profile-btn" onClick={handleChangePassword}>
           Update Password
         </button>
 
