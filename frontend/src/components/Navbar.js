@@ -1,7 +1,11 @@
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import ProfileModal from "./ProfileModal";
+import "../styles/Navbar.css";
 
 function Navbar() {
   const navigate = useNavigate();
+  const [showProfile, setShowProfile] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -10,65 +14,40 @@ function Navbar() {
   };
 
   return (
-    <div style={styles.navbar}>
-      
-      {/* LEFT SIDE */}
-      <div style={styles.logo}>
-        UniMate
+    <>
+      <div className="navbar">
+
+        {/* LEFT */}
+        <div className="logo">
+          UniMate
+        </div>
+
+        {/* RIGHT */}
+        <div className="nav-right">
+
+          <button
+            className="profile-btn"
+            onClick={() => setShowProfile(true)}
+          >
+            👤 Profile
+          </button>
+
+          <button
+            className="logout-btn"
+            onClick={handleLogout}
+          >
+            Logout
+          </button>
+
+        </div>
       </div>
 
-      {/* RIGHT SIDE */}
-      <div style={styles.right}>
-        
-        <button style={styles.btn} onClick={() => navigate("/profile")}>
-          👤 Profile
-        </button>
-
-        <button style={styles.logout} onClick={handleLogout}>
-          Logout
-        </button>
-
-      </div>
-    </div>
+      {/* 🔥 PROFILE MODAL */}
+      {showProfile && (
+        <ProfileModal onClose={() => setShowProfile(false)} />
+      )}
+    </>
   );
 }
-
-const styles = {
-  navbar: {
-    width: "100%",
-    height: "60px",
-    background: "#2563eb",
-    color: "white",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "0 20px",
-    boxShadow: "0 4px 10px rgba(0,0,0,0.1)"
-  },
-  logo: {
-    fontSize: "20px",
-    fontWeight: "bold"
-  },
-  right: {
-    display: "flex",
-    gap: "10px"
-  },
-  btn: {
-    background: "white",
-    color: "#2563eb",
-    border: "none",
-    padding: "8px 12px",
-    borderRadius: "8px",
-    cursor: "pointer"
-  },
-  logout: {
-    background: "#ef4444",
-    color: "white",
-    border: "none",
-    padding: "8px 12px",
-    borderRadius: "8px",
-    cursor: "pointer"
-  }
-};
 
 export default Navbar;
