@@ -122,6 +122,22 @@ exports.getAllUsers = async (req, res) => {
 
 
 // =========================
+// GET PROFILE
+// =========================
+exports.getProfile = async (req, res) => {
+  try {
+    console.log("USER FROM TOKEN:", req.user); // 👈 DEBUG
+
+    const user = await User.findById(req.user.id).select("-password");
+
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+// =========================
 // UPDATE USER STATUS
 // =========================
 exports.updateUserStatus = async (req, res) => {
@@ -176,6 +192,39 @@ exports.updateUserRole = async (req, res) => {
       user
     });
 
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+// =========================
+// CHANGE PASSWORD
+// =========================
+exports.changePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    
+    const user = await User.findById(req.user.id);
+    
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    
+    if (!isMatch) {
+      return res.status(400).json({ message: "Old password incorrect" });
+    }
+    
+    const hashed = await bcrypt.hash(newPassword, 10);
+    user.password = hashed;
+    await user.save();
+    
+    // AUDIT LOG
+    await AuditLog.create({
+      action: "Password Changed",
+      performedBy: req.user.id,
+      targetUser: req.user.id
+    });
+    
+    res.json({ message: "Password updated successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
@@ -285,6 +334,13 @@ exports.resetPassword = async (req, res) => {
     user.resetTokenExpiry = undefined;
 
     await user.save();
+
+    // AUDIT LOG
+    await AuditLog.create({
+      action: "Password Reset",
+      performedBy: user._id,
+      targetUser: user._id
+    });
 
     res.json({ message: "Password reset successful" });
 

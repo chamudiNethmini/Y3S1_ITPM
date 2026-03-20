@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import API from "../services/api";
 import "../styles/AdminDashboard.css";
+import Navbar from "../components/Navbar";
+import "../styles/Profile.css";
 
 function AdminDashboard() {
 
@@ -77,16 +79,10 @@ function AdminDashboard() {
 
   const handleStatusChange = async (id, currentStatus) => {
     try {
-      const newStatus =
-        currentStatus === "active" ? "suspended" : "active";
-
-      await API.put(`/auth/update-status/${id}`, {
-        status: newStatus,
-      });
-
+      const newStatus = currentStatus === "active" ? "suspended" : "active";
+      await API.put(`/auth/update-status/${id}`, { status: newStatus });
       fetchUsers();
       fetchAuditLogs();
-
     } catch (error) {
       console.log(error);
     }
@@ -98,141 +94,91 @@ function AdminDashboard() {
   }, []);
 
   return (
-    <div className="admin-page">
-
-      {/* HEADER */}
-      <div className="admin-hero">
-        <h1>Admin Dashboard</h1>
-        <p>Manage users, roles and system access.</p>
-      </div>
-
-      {/* CREATE USER */}
-      <div className="admin-card">
-        <h3>Create New User</h3>
-
-        <div className="form-grid">
-          <input
-            type="text"
-            placeholder="Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-
-          <select value={role} onChange={(e) => setRole(e.target.value)}>
-            <option value="lic">LIC</option>
-            <option value="coordinator">Coordinator</option>
-            <option value="admin">Admin</option>
-          </select>
+    <>
+      <Navbar />
+      <div className="admin-page">
+        <div className="admin-hero">
+          <h1>Admin Dashboard</h1>
+          <p>Manage users, roles and system access.</p>
         </div>
 
-        <button className="primary-btn" onClick={handleCreateUser}>
-          Create User
-        </button>
-      </div>
+        <div className="admin-card">
+          <h3>Create New User</h3>
+          <div className="form-grid">
+            <input type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
+            <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <select value={role} onChange={(e) => setRole(e.target.value)}>
+              <option value="lic">LIC</option>
+              <option value="coordinator">Coordinator</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <button className="primary-btn" onClick={handleCreateUser}>Create User</button>
+        </div>
 
-      {/* USERS TABLE */}
-      <div className="admin-card">
-        <h3>Users</h3>
-
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {users.map((user) => (
-              <tr key={user._id}>
-                <td>{user.name}</td>
-                <td>{user.email}</td>
-                <td>{user.role}</td>
-                <td>
-                  <span className={`status ${user.status}`}>
-                    {user.status}
-                  </span>
-                </td>
-                <td>
-                  <button
-                    className="warning-btn"
-                    onClick={() =>
-                      handleStatusChange(user._id, user.status)
-                    }
-                  >
-                    {user.status === "active" ? "Suspend" : "Activate"}
-                  </button>
-
-                  {user.role !== "admin" && (
-                    <button
-                      className="danger-btn"
-                      onClick={() => handleDelete(user._id)}
-                    >
-                      Delete
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* AUDIT LOGS */}
-      <div className="admin-card">
-        <h3>Audit Logs</h3>
-
-        <div className="audit-scroll">
+        <div className="admin-card">
+          <h3>Users</h3>
           <table className="admin-table">
             <thead>
               <tr>
-                <th>Action</th>
-                <th>Performed By</th>
-                <th>Target User</th>
-                <th>Time</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
-
             <tbody>
-              {auditLogs.map((log) => (
-                <tr key={log._id}>
-                  <td>{log.action}</td>
+              {users.map((user) => (
+                <tr key={user._id}>
+                  <td>{user.name}</td>
+                  <td>{user.email}</td>
+                  <td>{user.role}</td>
                   <td>
-                    {log.performedBy
-                      ? `${log.performedBy.name}`
-                      : "N/A"}
+                    <span className={`status ${user.status}`}>{user.status}</span>
                   </td>
                   <td>
-                    {log.targetUser
-                      ? `${log.targetUser.name}`
-                      : "N/A"}
+                    <button className="warning-btn" onClick={() => handleStatusChange(user._id, user.status)}>
+                      {user.status === "active" ? "Suspend" : "Activate"}
+                    </button>
+                    {user.role !== "admin" && (
+                      <button className="danger-btn" onClick={() => handleDelete(user._id)}>Delete</button>
+                    )}
                   </td>
-                  <td>{new Date(log.timestamp).toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
+        <div className="admin-card">
+          <h3>Audit Logs</h3>
+          <div className="audit-scroll">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Action</th>
+                  <th>Performed By</th>
+                  <th>Target User</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {auditLogs.map((log) => (
+                  <tr key={log._id}>
+                    <td>{log.action}</td>
+                    <td>{log.performedBy ? `${log.performedBy.name}` : "N/A"}</td>
+                    <td>{log.targetUser ? `${log.targetUser.name}` : "N/A"}</td>
+                    <td>{new Date(log.timestamp).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
