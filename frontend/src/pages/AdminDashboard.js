@@ -34,26 +34,43 @@ function AdminDashboard() {
 
   // CREATE USER
   const handleCreateUser = async () => {
-    try {
-      await API.post("/auth/create-user", {
-        name,
-        email,
-        password,
-        role,
-      });
 
-      setName("");
-      setEmail("");
-      setPassword("");
-      setRole("lic");
+  // ❗ 1. EMPTY CHECK
+  if (!name || !email || !password) {
+    alert("All fields are required");
+    return;
+  }
 
-      fetchUsers();
-      fetchAuditLogs();
+  // ❗ 2. EMAIL FORMAT CHECK
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    } catch (error) {
-      alert(error.response?.data?.message || "Error creating user");
-    }
-  };
+  if (!emailPattern.test(email)) {
+    alert("Invalid email format");
+    return;
+  }
+
+  try {
+    await API.post("/auth/create-user", {
+      name,
+      email,
+      password,
+      role,
+    });
+
+    alert("User created successfully");
+
+    setName("");
+    setEmail("");
+    setPassword("");
+    setRole("lic");
+
+    fetchUsers();
+    fetchAuditLogs();
+
+  } catch (error) {
+    alert(error.response?.data?.message || "Error creating user");
+  }
+};
 
   // DELETE USER
   const handleDelete = async (id) => {
