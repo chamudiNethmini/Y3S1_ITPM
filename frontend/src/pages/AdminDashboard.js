@@ -3,10 +3,7 @@ import API from "../services/api";
 
 function AdminDashboard() {
 
-  
   // STATES
-  
-
   const [users, setUsers] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
 
@@ -15,11 +12,7 @@ function AdminDashboard() {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("lic");
 
-  
   // FETCH USERS
-  
-  
-
   const fetchUsers = async () => {
     try {
       const res = await API.get("/auth/all-users");
@@ -29,10 +22,7 @@ function AdminDashboard() {
     }
   };
 
-  
   // FETCH AUDIT LOGS
-  
-
   const fetchAuditLogs = async () => {
     try {
       const res = await API.get("/auth/audit-logs");
@@ -42,10 +32,7 @@ function AdminDashboard() {
     }
   };
 
-  
   // CREATE USER
-  
-
   const handleCreateUser = async () => {
     try {
       await API.post("/auth/create-user", {
@@ -68,10 +55,7 @@ function AdminDashboard() {
     }
   };
 
-  
   // DELETE USER
-  
-
   const handleDelete = async (id) => {
     try {
       await API.delete(`/auth/delete-user/${id}`);
@@ -82,12 +66,7 @@ function AdminDashboard() {
     }
   };
 
-  
-
-  
   // TOGGLE STATUS
-  
-
   const handleStatusChange = async (id, currentStatus) => {
     try {
       const newStatus =
@@ -97,8 +76,6 @@ function AdminDashboard() {
         status: newStatus,
       });
 
-      
-
       fetchUsers();
       fetchAuditLogs();
 
@@ -107,10 +84,7 @@ function AdminDashboard() {
     }
   };
 
-  
   // LOAD ON START
-  
-
   useEffect(() => {
     fetchUsers();
     fetchAuditLogs();
@@ -165,7 +139,7 @@ function AdminDashboard() {
 
       <h3>Users</h3>
 
-      <table border="1" cellPadding="10">
+      <table border="1" cellPadding="10" style={{ width: "100%" }}>
         <thead>
           <tr>
             <th>Name</th>
@@ -209,40 +183,48 @@ function AdminDashboard() {
       </table>
 
       {/* ===========================
-          AUDIT LOG TABLE
+          AUDIT LOG TABLE (WITH SCROLL)
       ============================ */}
 
       <h3 style={{ marginTop: "40px" }}>Audit Logs</h3>
 
-      <table border="1" cellPadding="10">
-        <thead>
-          <tr>
-            <th>Action</th>
-            <th>Performed By</th>
-            <th>Target User</th>
-            <th>Time</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {auditLogs.map((log) => (
-            <tr key={log._id}>
-              <td>{log.action}</td>
-              <td>
-                {log.performedBy
-                  ? `${log.performedBy.name} (${log.performedBy.email})`
-                  : "N/A"}
-              </td>
-              <td>
-                {log.targetUser
-                  ? `${log.targetUser.name} (${log.targetUser.email})`
-                  : "N/A"}
-              </td>
-              <td>{new Date(log.timestamp).toLocaleString()}</td>
+      <div
+        style={{
+          maxHeight: "250px",
+          overflowY: "auto",
+          border: "1px solid #ccc",
+        }}
+      >
+        <table border="1" cellPadding="10" style={{ width: "100%" }}>
+          <thead style={{ position: "sticky", top: 0, background: "#fff" }}>
+            <tr>
+              <th>Action</th>
+              <th>Performed By</th>
+              <th>Target User</th>
+              <th>Time</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody>
+            {auditLogs.map((log) => (
+              <tr key={log._id}>
+                <td>{log.action}</td>
+                <td>
+                  {log.performedBy
+                    ? `${log.performedBy.name} (${log.performedBy.email})`
+                    : "N/A"}
+                </td>
+                <td>
+                  {log.targetUser
+                    ? `${log.targetUser.name} (${log.targetUser.email})`
+                    : "N/A"}
+                </td>
+                <td>{new Date(log.timestamp).toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
     </div>
   );
