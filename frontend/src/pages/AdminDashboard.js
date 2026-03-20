@@ -80,14 +80,19 @@ function AdminDashboard() {
   // ================= DELETE =================
 
   const handleDelete = async (id) => {
-    try {
-      await API.delete(`/auth/delete-user/${id}`);
-      fetchUsers();
-      fetchAuditLogs();
-    } catch (error) {
-      alert(error.response?.data?.message || "Error deleting user");
-    }
-  };
+
+  const confirmDelete = window.confirm("Are you sure you want to delete this user?");
+
+  if (!confirmDelete) return; // ❌ cancel una nam stop
+
+  try {
+    await API.delete(`/auth/delete-user/${id}`);
+    fetchUsers();
+    fetchAuditLogs();
+  } catch (error) {
+    alert(error.response?.data?.message || "Error deleting user");
+  }
+};
 
   // ================= STATUS =================
 
