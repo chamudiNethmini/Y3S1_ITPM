@@ -1,0 +1,16 @@
+.audit-container {
+  max-height: 250px; /* rows 5k wage */
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+/* optional – scrollbar styling */
+.audit-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.audit-container::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}

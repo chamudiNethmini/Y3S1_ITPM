@@ -1,12 +1,9 @@
 import { useState, useEffect } from "react";
 import API from "../services/api";
 import { useNavigate } from "react-router-dom";
+import "../styles/AuditLog.css";
 
 function AdminDashboard() {
-
-  
-  // STATES
-  
 
   // ===========================
   // STATES
@@ -20,20 +17,12 @@ function AdminDashboard() {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("lic");
 
-  
-  // store reply text per ticket
   const [replyTexts, setReplyTexts] = useState({});
 
   const navigate = useNavigate();
 
   // ===========================
   // FETCH USERS
-  
-
-  <button onClick={() => navigate("/tickets")}>
-  Go to Ticket Dashboard
-</button>
-
   // ===========================
   const fetchUsers = async () => {
     try {
@@ -44,10 +33,8 @@ function AdminDashboard() {
     }
   };
 
-  
+  // ===========================
   // FETCH AUDIT LOGS
-  
-
   // ===========================
   const fetchAuditLogs = async () => {
     try {
@@ -58,7 +45,6 @@ function AdminDashboard() {
     }
   };
 
-  
   // ===========================
   // FETCH TICKETS
   // ===========================
@@ -73,8 +59,6 @@ function AdminDashboard() {
 
   // ===========================
   // CREATE USER
-  
-
   // ===========================
   const handleCreateUser = async () => {
     try {
@@ -97,10 +81,8 @@ function AdminDashboard() {
     }
   };
 
-  
+  // ===========================
   // DELETE USER
-  
-
   // ===========================
   const handleDelete = async (id) => {
     try {
@@ -112,13 +94,7 @@ function AdminDashboard() {
     }
   };
 
-  
-
-  
   // ===========================
-  // TOGGLE STATUS
-  
-
   // TOGGLE USER STATUS
   // ===========================
   const handleStatusChange = async (id, currentStatus) => {
@@ -162,10 +138,6 @@ function AdminDashboard() {
     }
   };
 
-  
-  // LOAD ON START
-  
-
   // ===========================
   // INITIAL LOAD
   // ===========================
@@ -179,9 +151,7 @@ function AdminDashboard() {
     <div className="page">
       <h2>Admin Dashboard</h2>
 
-      {/* ===========================
-          NAVIGATE TO TICKET DASHBOARD
-      ============================ */}
+      {/* NAVIGATION */}
       <button
         onClick={() => navigate("/tickets")}
         style={{ marginBottom: "20px", padding: "8px 12px", cursor: "pointer" }}
@@ -189,9 +159,7 @@ function AdminDashboard() {
         Go to Ticket Dashboard
       </button>
 
-      {/* ===========================
-          CREATE USER FORM
-      ============================ */}
+      {/* CREATE USER */}
       <div style={{ marginBottom: "30px" }}>
         <h3>Create New User</h3>
 
@@ -225,9 +193,7 @@ function AdminDashboard() {
         <button onClick={handleCreateUser}>Create</button>
       </div>
 
-      {/* ===========================
-          USER TABLE
-      ============================ */}
+      {/* USERS */}
       <h3>Users</h3>
       <table border="1" cellPadding="10">
         <thead>
@@ -265,34 +231,41 @@ function AdminDashboard() {
         </tbody>
       </table>
 
-      {/* ===========================
-          AUDIT LOG TABLE
-      ============================ */}
+      {/* AUDIT LOGS WITH SCROLL */}
       <h3 style={{ marginTop: "40px" }}>Audit Logs</h3>
-      <table border="1" cellPadding="10">
-        <thead>
-          <tr>
-            <th>Action</th>
-            <th>Performed By</th>
-            <th>Target User</th>
-            <th>Time</th>
-          </tr>
-        </thead>
-        <tbody>
-          {auditLogs.map((log) => (
-            <tr key={log._id}>
-              <td>{log.action}</td>
-              <td>{log.performedBy ? `${log.performedBy.name} (${log.performedBy.email})` : "N/A"}</td>
-              <td>{log.targetUser ? `${log.targetUser.name} (${log.targetUser.email})` : "N/A"}</td>
-              <td>{new Date(log.timestamp).toLocaleString()}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
 
-      {/* ===========================
-          TICKETS TABLE
-      ============================ */}
+      <div className="audit-container">
+        <table border="1" cellPadding="10">
+          <thead>
+            <tr>
+              <th>Action</th>
+              <th>Performed By</th>
+              <th>Target User</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {auditLogs.map((log) => (
+              <tr key={log._id}>
+                <td>{log.action}</td>
+                <td>
+                  {log.performedBy
+                    ? `${log.performedBy.name} (${log.performedBy.email})`
+                    : "N/A"}
+                </td>
+                <td>
+                  {log.targetUser
+                    ? `${log.targetUser.name} (${log.targetUser.email})`
+                    : "N/A"}
+                </td>
+                <td>{new Date(log.timestamp).toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* TICKETS */}
       <h3 style={{ marginTop: "40px" }}>Tickets</h3>
       <table border="1" cellPadding="10">
         <thead>
@@ -322,9 +295,14 @@ function AdminDashboard() {
                       type="text"
                       placeholder="Reply"
                       value={replyTexts[ticket._id] || ""}
-                      onChange={(e) => handleReplyChange(ticket._id, e.target.value)}
+                      onChange={(e) =>
+                        handleReplyChange(ticket._id, e.target.value)
+                      }
                     />
-                    <button onClick={() => handleReply(ticket._id)} style={{ marginLeft: "5px" }}>
+                    <button
+                      onClick={() => handleReply(ticket._id)}
+                      style={{ marginLeft: "5px" }}
+                    >
                       Reply
                     </button>
                   </>
