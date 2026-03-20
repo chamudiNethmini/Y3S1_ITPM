@@ -12,6 +12,7 @@ function AdminDashboard() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("lic");
+  const [searchTerm, setSearchTerm] = useState("");
 
   // 🔥 NEW STATE (FILTER)
   const [filterRole, setFilterRole] = useState("all");
@@ -95,10 +96,19 @@ function AdminDashboard() {
   }, []);
 
   // 🔥 FILTER LOGIC
-  const filteredUsers =
-    filterRole === "all"
-      ? users
-      : users.filter((user) => user.role === filterRole);
+  const filteredUsers = users.filter((user) => {
+  const matchesRole =
+    filterRole === "all" || user.role === filterRole;
+
+  const search = searchTerm.toLowerCase();
+
+  const matchesSearch =
+    user.name.toLowerCase().includes(search) ||
+    user.email.toLowerCase().includes(search) ||
+    user.role.toLowerCase().includes(search);
+
+  return matchesRole && matchesSearch;
+});
 
   return (
     <>
@@ -135,21 +145,35 @@ function AdminDashboard() {
         {/* USERS TABLE */}
         <div className="admin-card">
           
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h3>Users</h3>
+         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+  
+  {/* 🔍 SEARCH */}
+  <input
+    type="text"
+    placeholder="Search by name, email or role..."
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+    style={{
+      padding: "8px",
+      borderRadius: "8px",
+      border: "1px solid #ccc",
+      width: "250px"
+    }}
+  />
 
-            {/* 🔥 DROPDOWN FILTER */}
-            <select
-              value={filterRole}
-              onChange={(e) => setFilterRole(e.target.value)}
-              style={{ padding: "8px", borderRadius: "8px" }}
-            >
-              <option value="all">All Users</option>
-              <option value="admin">Admin</option>
-              <option value="lic">LIC</option>
-              <option value="coordinator">Coordinator</option>
-            </select>
-          </div>
+  {/* 🔽 FILTER */}
+  <select
+    value={filterRole}
+    onChange={(e) => setFilterRole(e.target.value)}
+    style={{ padding: "8px", borderRadius: "8px" }}
+  >
+    <option value="all">All</option>
+    <option value="admin">Admin</option>
+    <option value="lic">LIC</option>
+    <option value="coordinator">Coordinator</option>
+  </select>
+
+</div>
 
           <table className="admin-table">
             <thead>
