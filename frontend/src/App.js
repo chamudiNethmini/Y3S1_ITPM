@@ -1,15 +1,31 @@
 import "./App.css";
-import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useNavigate,
+} from "react-router-dom";
 
+// Login Pages
 import AdminLogin from "./pages/AdminLogin";
 import CoordinatorLogin from "./pages/CoordinatorLogin";
 import LecturerLogin from "./pages/LecturerLogin";
 
-import ProtectedRoute from "./components/ProtectedRoute";
+// Dashboards
 import AdminDashboard from "./pages/AdminDashboard";
 import CoordinatorDashboard from "./pages/CoordinatorDashboard";
 import LecturerDashboard from "./pages/LecturerDashboard";
 
+// Ticket Page
+import Ticket from "./pages/Ticket";
+
+// Protected Route
+import ProtectedRoute from "./components/ProtectedRoute";
+
+
+// ===========================
+// HOME PAGE
+// ===========================
 function Home() {
   const navigate = useNavigate();
 
@@ -27,15 +43,15 @@ function Home() {
         </p>
 
         <div className="button-group">
-          <button className="primary-btn" onClick={() => navigate("/admin")}>
+          <button onClick={() => navigate("/admin")}>
             Admin Login
           </button>
 
-          <button className="secondary-btn" onClick={() => navigate("/coordinator")}>
+          <button onClick={() => navigate("/coordinator")}>
             Coordinator Login
           </button>
 
-          <button className="secondary-btn" onClick={() => navigate("/lecturer")}>
+          <button onClick={() => navigate("/lecturer")}>
             Lecturer Login
           </button>
         </div>
@@ -48,16 +64,24 @@ function Home() {
   );
 }
 
+
+// ===========================
+// MAIN APP
+// ===========================
 function App() {
   return (
     <Router>
       <Routes>
+
+        {/* Home */}
         <Route path="/" element={<Home />} />
+
+        {/* Login Routes */}
         <Route path="/admin" element={<AdminLogin />} />
         <Route path="/coordinator" element={<CoordinatorLogin />} />
         <Route path="/lecturer" element={<LecturerLogin />} />
 
-        {/* 🔐 Protected Admin Dashboard Route */}
+        {/* Protected Dashboards */}
         <Route
           path="/admin-dashboard"
           element={
@@ -67,7 +91,6 @@ function App() {
           }
         />
 
-        {/* 🔐 Protected Coordinator Dashboard Route */}
         <Route
           path="/coordinator-dashboard"
           element={
@@ -77,12 +100,21 @@ function App() {
           }
         />
 
-        {/* 🔐 Protected Lecturer Dashboard Route */}
         <Route
           path="/lecturer-dashboard"
           element={
             <ProtectedRoute allowedRole="lic">
               <LecturerDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ✅ TICKETS PAGE (ADMIN ONLY) */}
+        <Route
+          path="/tickets"
+          element={
+            <ProtectedRoute allowedRole="admin">
+              <Ticket />
             </ProtectedRoute>
           }
         />

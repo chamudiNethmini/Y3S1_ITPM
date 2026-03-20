@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import API from "../services/api";
+import { useNavigate } from "react-router-dom";
 
 function AdminDashboard() {
 
@@ -18,10 +19,15 @@ function AdminDashboard() {
 
   // store reply text per ticket
   const [replyTexts, setReplyTexts] = useState({});
+  const navigate = useNavigate();
 
   // ===========================
   // FETCH USERS
   // ===========================
+
+  <button onClick={() => navigate("/tickets")}>
+  Go to Ticket Dashboard
+</button>
 
   const fetchUsers = async () => {
     try {

@@ -10,6 +10,7 @@ const ticketRoutes = require("./routes/ticketRoutes");
 
 app.use("/api/tickets", ticketRoutes);
 
+
 app.use(cors());
 app.use(express.json());
 connectDB();
