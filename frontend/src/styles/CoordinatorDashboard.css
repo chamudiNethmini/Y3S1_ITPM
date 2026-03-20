@@ -310,3 +310,38 @@ body {
     padding: 18px;
   }
 }
+.management-tabs {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  margin-bottom: 24px;
+}
+
+.tab-btn {
+  border: 1px solid #d6deea;
+  background: #f8fbff;
+  color: #374151;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+  background: #eef4ff;
+  border-color: #bfd2f7;
+}
+
+.active-tab {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+  border-color: #2563eb;
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.2);
+}
+
+.management-content {
+  margin-top: 10px;
+}
