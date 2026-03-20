@@ -14,6 +14,8 @@ function CoordinatorDashboard() {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
 
+  const [activeSection, setActiveSection] = useState("resources");
+
   const fetchTickets = async () => {
     try {
       setLoading(true);
@@ -102,7 +104,7 @@ function CoordinatorDashboard() {
         <div className="dashboard-hero">
           <div>
             <h1>Coordinator Dashboard</h1>
-            <p>Manage tickets and resources with a clean professional dashboard.</p>
+            <p>Manage tickets, resources, timetables, and sessions in one place.</p>
           </div>
         </div>
 
@@ -251,9 +253,43 @@ function CoordinatorDashboard() {
           </div>
         </div>
 
-        <ResourceManagement />
-        <TimetableManagementPage/>
-        <SessionManagementPage/>
+        <div className="dashboard-card">
+          <div className="section-header">
+            <div>
+              <h3>Management Panels</h3>
+              <p>Select a section to manage.</p>
+            </div>
+          </div>
+
+          <div className="management-tabs">
+            <button
+              className={`tab-btn ${activeSection === "resources" ? "active-tab" : ""}`}
+              onClick={() => setActiveSection("resources")}
+            >
+              Resource Management
+            </button>
+
+            <button
+              className={`tab-btn ${activeSection === "timetable" ? "active-tab" : ""}`}
+              onClick={() => setActiveSection("timetable")}
+            >
+              Timetable Management
+            </button>
+
+            <button
+              className={`tab-btn ${activeSection === "session" ? "active-tab" : ""}`}
+              onClick={() => setActiveSection("session")}
+            >
+              Session Management
+            </button>
+          </div>
+
+          <div className="management-content">
+            {activeSection === "resources" && <ResourceManagement />}
+            {activeSection === "timetable" && <TimetableManagementPage />}
+            {activeSection === "session" && <SessionManagementPage />}
+          </div>
+        </div>
       </div>
     </div>
   );
