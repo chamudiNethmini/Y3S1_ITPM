@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import API from "../services/api";
 import ResourceManagement from "./ResourceManagement";
 import "../styles/CoordinatorDashboard.css";
+import TimetableManagementPage from "./TimetableManagement";
+import SessionManagementPage from "./SessionManagement";
 
 function CoordinatorDashboard() {
   const [tickets, setTickets] = useState([]);
@@ -250,6 +252,8 @@ function CoordinatorDashboard() {
         </div>
 
         <ResourceManagement />
+        <TimetableManagementPage/>
+        <SessionManagementPage/>
       </div>
     </div>
   );
