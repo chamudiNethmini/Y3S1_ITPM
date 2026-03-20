@@ -12,10 +12,11 @@ function AdminDashboard() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("lic");
-  const [searchTerm, setSearchTerm] = useState("");
 
-  // 🔥 NEW STATE (FILTER)
+  const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("all");
+
+  // ================= FETCH =================
 
   const fetchUsers = async () => {
     try {
@@ -34,6 +35,13 @@ function AdminDashboard() {
       console.log(error);
     }
   };
+
+  useEffect(() => {
+    fetchUsers();
+    fetchAuditLogs();
+  }, []);
+
+  // ================= CREATE USER =================
 
   const handleCreateUser = async () => {
     if (!name || !email || !password) {
@@ -69,6 +77,8 @@ function AdminDashboard() {
     }
   };
 
+  // ================= DELETE =================
+
   const handleDelete = async (id) => {
     try {
       await API.delete(`/auth/delete-user/${id}`);
@@ -79,36 +89,54 @@ function AdminDashboard() {
     }
   };
 
+  // ================= STATUS =================
+
   const handleStatusChange = async (id, currentStatus) => {
     try {
-      const newStatus = currentStatus === "active" ? "suspended" : "active";
-      await API.put(`/auth/update-status/${id}`, { status: newStatus });
+      const newStatus =
+        currentStatus === "active" ? "suspended" : "active";
+
+      await API.put(`/auth/update-status/${id}`, {
+        status: newStatus,
+      });
+
       fetchUsers();
       fetchAuditLogs();
+
     } catch (error) {
       console.log(error);
     }
   };
 
-  useEffect(() => {
-    fetchUsers();
-    fetchAuditLogs();
-  }, []);
+  // ================= FILTER =================
 
-  // 🔥 FILTER LOGIC
   const filteredUsers = users.filter((user) => {
-  const matchesRole =
-    filterRole === "all" || user.role === filterRole;
+    const matchesRole =
+      filterRole === "all" || user.role === filterRole;
 
-  const search = searchTerm.toLowerCase();
+    const search = searchTerm.toLowerCase();
 
-  const matchesSearch =
-    user.name.toLowerCase().includes(search) ||
-    user.email.toLowerCase().includes(search) ||
-    user.role.toLowerCase().includes(search);
+    const matchesSearch =
+      user.name.toLowerCase().includes(search) ||
+      user.email.toLowerCase().includes(search) ||
+      user.role.toLowerCase().includes(search);
 
-  return matchesRole && matchesSearch;
-});
+    return matchesRole && matchesSearch;
+  });
+
+  // ================= STATS =================
+
+  const totalUsers = users.length;
+
+  const activeUsers = users.filter(
+    (user) => user.status === "active"
+  ).length;
+
+  const suspendedUsers = users.filter(
+    (user) => user.status === "suspended"
+  ).length;
+
+  // ================= UI =================
 
   return (
     <>
@@ -116,9 +144,28 @@ function AdminDashboard() {
 
       <div className="admin-page">
 
+        {/* HERO */}
         <div className="admin-hero">
           <h1>Admin Dashboard</h1>
           <p>Manage users, roles and system access.</p>
+        </div>
+
+        {/* 🔥 STATS CARDS */}
+        <div className="stats-grid">
+          <div className="stat-card stat-blue">
+            <span className="stat-title">Total Users</span>
+            <h2>{totalUsers}</h2>
+          </div>
+
+          <div className="stat-card stat-green">
+            <span className="stat-title">Active Users</span>
+            <h2>{activeUsers}</h2>
+          </div>
+
+          <div className="stat-card stat-yellow">
+            <span className="stat-title">Suspended Users</span>
+            <h2>{suspendedUsers}</h2>
+          </div>
         </div>
 
         {/* CREATE USER */}
@@ -142,38 +189,31 @@ function AdminDashboard() {
           </button>
         </div>
 
-        {/* USERS TABLE */}
+        {/* USERS */}
         <div className="admin-card">
-          
-         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-  
-  {/* 🔍 SEARCH */}
-  <input
-    type="text"
-    placeholder="Search by name, email or role..."
-    value={searchTerm}
-    onChange={(e) => setSearchTerm(e.target.value)}
-    style={{
-      padding: "8px",
-      borderRadius: "8px",
-      border: "1px solid #ccc",
-      width: "250px"
-    }}
-  />
 
-  {/* 🔽 FILTER */}
-  <select
-    value={filterRole}
-    onChange={(e) => setFilterRole(e.target.value)}
-    style={{ padding: "8px", borderRadius: "8px" }}
-  >
-    <option value="all">All</option>
-    <option value="admin">Admin</option>
-    <option value="lic">LIC</option>
-    <option value="coordinator">Coordinator</option>
-  </select>
+          <div className="top-bar">
 
-</div>
+            <input
+              type="text"
+              placeholder="Search by name, email or role..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+
+            <select
+              value={filterRole}
+              onChange={(e) => setFilterRole(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">All</option>
+              <option value="admin">Admin</option>
+              <option value="lic">LIC</option>
+              <option value="coordinator">Coordinator</option>
+            </select>
+
+          </div>
 
           <table className="admin-table">
             <thead>
@@ -206,7 +246,9 @@ function AdminDashboard() {
                         handleStatusChange(user._id, user.status)
                       }
                     >
-                      {user.status === "active" ? "Suspend" : "Activate"}
+                      {user.status === "active"
+                        ? "Suspend"
+                        : "Activate"}
                     </button>
 
                     {user.role !== "admin" && (
@@ -223,7 +265,7 @@ function AdminDashboard() {
 
               {filteredUsers.length === 0 && (
                 <tr>
-                  <td colSpan="5" style={{ textAlign: "center" }}>
+                  <td colSpan="5" className="no-data">
                     No users found
                   </td>
                 </tr>
