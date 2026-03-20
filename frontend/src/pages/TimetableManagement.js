@@ -37,16 +37,26 @@ function TimetableManagementPage() {
     let isValid = true;
 
     const batchRegex = /^[A-Za-z0-9\s\-/.()]*$/;
-    const hallRegex = /^[A-Za-z0-9\s\-/.()]*$/;
+    const hallRegex = /^[A-Za-z0-9\s]*$/;
 
     if (filters.batchGroup && !batchRegex.test(filters.batchGroup.trim())) {
       newErrors.batchGroup = "Batch / Group contains invalid characters";
       isValid = false;
     }
 
-    if (filters.hall && !hallRegex.test(filters.hall.trim())) {
-      newErrors.hall = "Hall contains invalid characters";
-      isValid = false;
+    if (filters.hall) {
+      const hallValue = filters.hall.trim();
+
+      if (!hallRegex.test(hallValue)) {
+        newErrors.hall = "Hall can contain only letters and numbers";
+        isValid = false;
+      } else if (hallValue.length < 3) {
+        newErrors.hall = "Hall must be at least 3 characters";
+        isValid = false;
+      } else if (!/^[A-Z]/.test(hallValue)) {
+        newErrors.hall = "Hall must start with an uppercase letter";
+        isValid = false;
+      }
     }
 
     setErrors(newErrors);
