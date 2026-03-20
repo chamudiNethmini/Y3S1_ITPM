@@ -33,16 +33,24 @@ function Ticket() {
   // HANDLE REPLY INPUT
   // ===========================
   const handleReplyChange = (id, value) => {
-    setReplyTexts((prev) => ({
-      ...prev,
-      [id]: value,
-    }));
+    // Limit reply input to 1000 characters
+    if (value.length <= 1000) {
+      setReplyTexts((prev) => ({
+        ...prev,
+        [id]: value,
+      }));
+    }
   };
 
   // ===========================
   // REPLY FUNCTION
   // ===========================
   const handleReply = async (id) => {
+    if (!replyTexts[id]) {
+      alert("Reply cannot be empty");
+      return;
+    }
+
     try {
       await API.put(`/tickets/reply/${id}`, {
         reply: replyTexts[id],
@@ -68,6 +76,12 @@ function Ticket() {
       return;
     }
 
+    // Message length validation
+    if (message.length > 1000) {
+      alert("Message cannot exceed 1000 characters");
+      return;
+    }
+
     try {
       await API.post("/tickets/create", {
         subject,
@@ -86,10 +100,12 @@ function Ticket() {
   // ===========================
   // FILTER LOGIC
   // ===========================
+  const isValidStatus = (status) => /^[a-zA-Z]+$/.test(status); // Only letters allowed
+
   const filteredTickets =
     statusFilter === "all"
       ? tickets
-      : tickets.filter((t) => t.status === statusFilter);
+      : tickets.filter((t) => isValidStatus(t.status) && t.status === statusFilter);
 
   return (
     <div className="page">
@@ -119,6 +135,7 @@ function Ticket() {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           style={{ marginLeft: "10px" }}
+          maxLength={1000} // HTML max length validation
         />
 
         <button
@@ -134,7 +151,14 @@ function Ticket() {
         <label>Filter by Status: </label>
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
+          onChange={(e) => {
+            // Only allow words, no numbers/icons
+            if (e.target.value === "all" || /^[a-zA-Z]+$/.test(e.target.value)) {
+              setStatusFilter(e.target.value);
+            } else {
+              alert("Invalid status. Only letters allowed.");
+            }
+          }}
         >
           <option value="all">All</option>
           <option value="pending">Pending</option>
@@ -175,6 +199,7 @@ function Ticket() {
                       onChange={(e) =>
                         handleReplyChange(ticket._id, e.target.value)
                       }
+                      maxLength={1000} // Limit reply input
                     />
                     <button
                       onClick={() => handleReply(ticket._id)}
