@@ -11,7 +11,12 @@ function TimetableManagementPage() {
     batchGroup: "",
     lecturer: "",
     hall: "",
-    status: "published",
+    status: "",
+  });
+
+  const [errors, setErrors] = useState({
+    batchGroup: "",
+    hall: "",
   });
 
   const fetchLecturers = async () => {
@@ -23,13 +28,40 @@ function TimetableManagementPage() {
     }
   };
 
+  const validateFilters = () => {
+    const newErrors = {
+      batchGroup: "",
+      hall: "",
+    };
+
+    let isValid = true;
+
+    const batchRegex = /^[A-Za-z0-9\s\-/.()]*$/;
+    const hallRegex = /^[A-Za-z0-9\s\-/.()]*$/;
+
+    if (filters.batchGroup && !batchRegex.test(filters.batchGroup.trim())) {
+      newErrors.batchGroup = "Batch / Group contains invalid characters";
+      isValid = false;
+    }
+
+    if (filters.hall && !hallRegex.test(filters.hall.trim())) {
+      newErrors.hall = "Hall contains invalid characters";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
   const fetchEntries = async () => {
+    if (!validateFilters()) return;
+
     try {
       const params = {};
       if (filters.day) params.day = filters.day;
-      if (filters.batchGroup) params.batchGroup = filters.batchGroup;
+      if (filters.batchGroup.trim()) params.batchGroup = filters.batchGroup.trim();
       if (filters.lecturer) params.lecturer = filters.lecturer;
-      if (filters.hall) params.hall = filters.hall;
+      if (filters.hall.trim()) params.hall = filters.hall.trim();
       if (filters.status) params.status = filters.status;
 
       const res = await API.get("/timetable-entries", { params });
@@ -45,7 +77,50 @@ function TimetableManagementPage() {
 
   useEffect(() => {
     fetchEntries();
-  }, [filters]);
+  }, [filters.day, filters.lecturer, filters.status]);
+
+  const handleInputChange = (field, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+
+    if (field === "batchGroup" || field === "hall") {
+      setErrors((prev) => ({
+        ...prev,
+        [field]: "",
+      }));
+    }
+  };
+
+  const handleApplyFilters = () => {
+    fetchEntries();
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      day: "",
+      batchGroup: "",
+      lecturer: "",
+      hall: "",
+      status: "",
+    });
+
+    setErrors({
+      batchGroup: "",
+      hall: "",
+    });
+  };
+
+  const handlePublish = async (id) => {
+    try {
+      await API.patch(`/timetable-entries/${id}/publish`);
+      alert("Timetable published successfully");
+      fetchEntries();
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to publish timetable");
+    }
+  };
 
   const handlePrint = () => {
     window.print();
@@ -74,7 +149,7 @@ function TimetableManagementPage() {
             <select
               className="resource-input"
               value={filters.day}
-              onChange={(e) => setFilters({ ...filters, day: e.target.value })}
+              onChange={(e) => handleInputChange("day", e.target.value)}
             >
               <option value="">All Days</option>
               <option value="Monday">Monday</option>
@@ -93,10 +168,11 @@ function TimetableManagementPage() {
               type="text"
               placeholder="Filter by batch/group"
               value={filters.batchGroup}
-              onChange={(e) =>
-                setFilters({ ...filters, batchGroup: e.target.value })
-              }
+              onChange={(e) => handleInputChange("batchGroup", e.target.value)}
             />
+            {errors.batchGroup && (
+              <span className="error-text">{errors.batchGroup}</span>
+            )}
           </div>
 
           <div className="resource-filter-box">
@@ -104,9 +180,7 @@ function TimetableManagementPage() {
             <select
               className="resource-input"
               value={filters.lecturer}
-              onChange={(e) =>
-                setFilters({ ...filters, lecturer: e.target.value })
-              }
+              onChange={(e) => handleInputChange("lecturer", e.target.value)}
             >
               <option value="">All Lecturers</option>
               {lecturers.map((lecturer) => (
@@ -124,8 +198,9 @@ function TimetableManagementPage() {
               type="text"
               placeholder="Filter by hall"
               value={filters.hall}
-              onChange={(e) => setFilters({ ...filters, hall: e.target.value })}
+              onChange={(e) => handleInputChange("hall", e.target.value)}
             />
+            {errors.hall && <span className="error-text">{errors.hall}</span>}
           </div>
 
           <div className="resource-filter-box">
@@ -133,9 +208,7 @@ function TimetableManagementPage() {
             <select
               className="resource-input"
               value={filters.status}
-              onChange={(e) =>
-                setFilters({ ...filters, status: e.target.value })
-              }
+              onChange={(e) => handleInputChange("status", e.target.value)}
             >
               <option value="">All Status</option>
               <option value="draft">Draft</option>
@@ -145,6 +218,14 @@ function TimetableManagementPage() {
         </div>
 
         <div className="resource-action-row">
+          <button className="resource-primary-btn" onClick={handleApplyFilters}>
+            Apply Filters
+          </button>
+
+          <button className="resource-secondary-btn" onClick={handleClearFilters}>
+            Clear Filters
+          </button>
+
           <Link className="resource-link" to="/session-management">
             <button className="resource-secondary-btn">
               Go to Session Management
@@ -177,6 +258,7 @@ function TimetableManagementPage() {
                 <th>Start</th>
                 <th>End</th>
                 <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -205,11 +287,25 @@ function TimetableManagementPage() {
                         {entry.status}
                       </span>
                     </td>
+                    <td>
+                      {entry.status !== "published" ? (
+                        <button
+                          className="resource-publish-btn"
+                          onClick={() => handlePublish(entry._id)}
+                        >
+                          Publish
+                        </button>
+                      ) : (
+                        <span className="resource-badge status-published">
+                          Published
+                        </span>
+                      )}
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td className="resource-empty" colSpan="8">
+                  <td className="resource-empty" colSpan="9">
                     No timetable entries found.
                   </td>
                 </tr>

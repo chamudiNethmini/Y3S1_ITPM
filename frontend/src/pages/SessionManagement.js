@@ -19,6 +19,16 @@ function SessionManagementPage() {
     status: "draft",
   });
 
+  const [errors, setErrors] = useState({
+    module: "",
+    lecturer: "",
+    batchGroup: "",
+    hall: "",
+    day: "",
+    startTime: "",
+    endTime: "",
+  });
+
   const fetchLecturers = async () => {
     try {
       const res = await API.get("/timetable-entries/lecturers");
@@ -44,6 +54,126 @@ function SessionManagementPage() {
     fetchEntries();
   }, []);
 
+  const toMinutes = (time) => {
+    if (!time) return null;
+
+    const parts = time.split(":");
+    if (parts.length !== 2) return null;
+
+    const hours = Number(parts[0]);
+    const minutes = Number(parts[1]);
+
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+
+    return hours * 60 + minutes;
+  };
+
+  const validateForm = () => {
+    const newErrors = {
+      module: "",
+      lecturer: "",
+      batchGroup: "",
+      hall: "",
+      day: "",
+      startTime: "",
+      endTime: "",
+    };
+
+    let isValid = true;
+
+    const moduleRegex = /^[A-Za-z0-9\s\-&/().]+$/;
+    const batchRegex = /^[A-Za-z0-9\s\-/.()]+$/;
+    const hallRegex = /^[A-Za-z0-9\s\-/.()]+$/;
+
+    if (!form.module.trim()) {
+      newErrors.module = "Module is required";
+      isValid = false;
+    } else if (form.module.trim().length < 2) {
+      newErrors.module = "Module must be at least 2 characters";
+      isValid = false;
+    } else if (!moduleRegex.test(form.module.trim())) {
+      newErrors.module = "Module contains invalid characters";
+      isValid = false;
+    }
+
+    if (!form.lecturer) {
+      newErrors.lecturer = "Lecturer is required";
+      isValid = false;
+    }
+
+    if (!form.batchGroup.trim()) {
+      newErrors.batchGroup = "Batch / Group is required";
+      isValid = false;
+    } else if (form.batchGroup.trim().length < 2) {
+      newErrors.batchGroup = "Batch / Group must be at least 2 characters";
+      isValid = false;
+    } else if (!batchRegex.test(form.batchGroup.trim())) {
+      newErrors.batchGroup = "Batch / Group contains invalid characters";
+      isValid = false;
+    }
+
+    if (!form.hall.trim()) {
+      newErrors.hall = "Hall is required";
+      isValid = false;
+    } else if (form.hall.trim().length < 1) {
+      newErrors.hall = "Hall is required";
+      isValid = false;
+    } else if (!hallRegex.test(form.hall.trim())) {
+      newErrors.hall = "Hall contains invalid characters";
+      isValid = false;
+    }
+
+    if (!form.day) {
+      newErrors.day = "Day is required";
+      isValid = false;
+    }
+
+    if (!form.startTime) {
+      newErrors.startTime = "Start time is required";
+      isValid = false;
+    }
+
+    if (!form.endTime) {
+      newErrors.endTime = "End time is required";
+      isValid = false;
+    }
+
+    if (form.startTime && form.endTime) {
+      const start = toMinutes(form.startTime);
+      const end = toMinutes(form.endTime);
+
+      if (start === null) {
+        newErrors.startTime = "Invalid start time";
+        isValid = false;
+      }
+
+      if (end === null) {
+        newErrors.endTime = "Invalid end time";
+        isValid = false;
+      }
+
+      if (start !== null && end !== null && end <= start) {
+        newErrors.endTime = "End time must be after start time";
+        isValid = false;
+      }
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const handleChange = (field, value) => {
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+
+    setErrors((prev) => ({
+      ...prev,
+      [field]: "",
+    }));
+  };
+
   const resetForm = () => {
     setForm({
       module: "",
@@ -55,16 +185,38 @@ function SessionManagementPage() {
       endTime: "",
       status: "draft",
     });
+
+    setErrors({
+      module: "",
+      lecturer: "",
+      batchGroup: "",
+      hall: "",
+      day: "",
+      startTime: "",
+      endTime: "",
+    });
+
     setEditingId(null);
   };
 
   const handleSubmit = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
     try {
+      const payload = {
+        ...form,
+        module: form.module.trim(),
+        batchGroup: form.batchGroup.trim(),
+        hall: form.hall.trim(),
+      };
+
       if (editingId) {
-        await API.put(`/timetable-entries/${editingId}`, form);
+        await API.put(`/timetable-entries/${editingId}`, payload);
         alert("Session updated successfully");
       } else {
-        await API.post("/timetable-entries", form);
+        await API.post("/timetable-entries", payload);
         alert("Session created successfully");
       }
 
@@ -86,6 +238,16 @@ function SessionManagementPage() {
       startTime: entry.startTime,
       endTime: entry.endTime,
       status: entry.status,
+    });
+
+    setErrors({
+      module: "",
+      lecturer: "",
+      batchGroup: "",
+      hall: "",
+      day: "",
+      startTime: "",
+      endTime: "",
     });
   };
 
@@ -135,8 +297,9 @@ function SessionManagementPage() {
               type="text"
               placeholder="Enter module"
               value={form.module}
-              onChange={(e) => setForm({ ...form, module: e.target.value })}
+              onChange={(e) => handleChange("module", e.target.value)}
             />
+            {errors.module && <span className="error-text">{errors.module}</span>}
           </div>
 
           <div className="resource-form-group">
@@ -144,7 +307,7 @@ function SessionManagementPage() {
             <select
               className="resource-input"
               value={form.lecturer}
-              onChange={(e) => setForm({ ...form, lecturer: e.target.value })}
+              onChange={(e) => handleChange("lecturer", e.target.value)}
             >
               <option value="">Select Lecturer</option>
               {lecturers.map((lecturer) => (
@@ -153,6 +316,7 @@ function SessionManagementPage() {
                 </option>
               ))}
             </select>
+            {errors.lecturer && <span className="error-text">{errors.lecturer}</span>}
           </div>
 
           <div className="resource-form-group">
@@ -162,8 +326,11 @@ function SessionManagementPage() {
               type="text"
               placeholder="Enter batch/group"
               value={form.batchGroup}
-              onChange={(e) => setForm({ ...form, batchGroup: e.target.value })}
+              onChange={(e) => handleChange("batchGroup", e.target.value)}
             />
+            {errors.batchGroup && (
+              <span className="error-text">{errors.batchGroup}</span>
+            )}
           </div>
 
           <div className="resource-form-group">
@@ -173,8 +340,9 @@ function SessionManagementPage() {
               type="text"
               placeholder="Enter hall"
               value={form.hall}
-              onChange={(e) => setForm({ ...form, hall: e.target.value })}
+              onChange={(e) => handleChange("hall", e.target.value)}
             />
+            {errors.hall && <span className="error-text">{errors.hall}</span>}
           </div>
 
           <div className="resource-form-group">
@@ -182,7 +350,7 @@ function SessionManagementPage() {
             <select
               className="resource-input"
               value={form.day}
-              onChange={(e) => setForm({ ...form, day: e.target.value })}
+              onChange={(e) => handleChange("day", e.target.value)}
             >
               <option value="Monday">Monday</option>
               <option value="Tuesday">Tuesday</option>
@@ -191,6 +359,7 @@ function SessionManagementPage() {
               <option value="Friday">Friday</option>
               <option value="Saturday">Saturday</option>
             </select>
+            {errors.day && <span className="error-text">{errors.day}</span>}
           </div>
 
           <div className="resource-form-group">
@@ -199,8 +368,11 @@ function SessionManagementPage() {
               className="resource-input"
               type="time"
               value={form.startTime}
-              onChange={(e) => setForm({ ...form, startTime: e.target.value })}
+              onChange={(e) => handleChange("startTime", e.target.value)}
             />
+            {errors.startTime && (
+              <span className="error-text">{errors.startTime}</span>
+            )}
           </div>
 
           <div className="resource-form-group">
@@ -209,8 +381,9 @@ function SessionManagementPage() {
               className="resource-input"
               type="time"
               value={form.endTime}
-              onChange={(e) => setForm({ ...form, endTime: e.target.value })}
+              onChange={(e) => handleChange("endTime", e.target.value)}
             />
+            {errors.endTime && <span className="error-text">{errors.endTime}</span>}
           </div>
         </div>
 

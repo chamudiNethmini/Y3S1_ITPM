@@ -139,10 +139,31 @@
 .resource-publish-btn {
   background: #10b981;
   color: white;
+  border: none;
+  margin-left: 0;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+  white-space: nowrap;
 }
 
 .resource-publish-btn:hover {
   background: #059669;
+}
+
+/* smaller status badge */
+.resource-badge.status-draft,
+.resource-badge.status-published {
+  min-width: 70px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 0;
+  white-space: nowrap;
 }
 
 .resource-print-btn {
@@ -159,7 +180,7 @@
 }
 
 .resource-filter-box {
-  min-width: 240px;
+  min-width: 200px;
 }
 
 .resource-filter-box label {
@@ -184,9 +205,15 @@
 .resource-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 1100px;
+  min-width: 1000px;
 }
 
+.resource-table tbody td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #edf1f7;
+  font-size: 14px;
+  vertical-align: middle;
+}
 .resource-table thead th {
   background: #f3f7fd;
   color: #374151;
@@ -198,10 +225,10 @@
 }
 
 .resource-table tbody td {
-  padding: 16px;
+  padding: 12px 10px;
   border-bottom: 1px solid #edf1f7;
   font-size: 14px;
-  vertical-align: top;
+  vertical-align: middle;
 }
 
 .resource-table tbody tr:hover {
@@ -215,7 +242,9 @@
 }
 
 .resource-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 7px 12px;
   border-radius: 999px;
   font-size: 12px;
@@ -223,6 +252,8 @@
   text-transform: capitalize;
   background: #e5e7eb;
   color: #374151;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .resource-badge.lecturer {
@@ -243,6 +274,18 @@
 .resource-badge.batch {
   background: #e0f2fe;
   color: #0369a1;
+}
+
+/* Modified status badge */
+.resource-badge.status-draft,
+.resource-badge.status-published {
+  min-width: 92px;
+  text-align: center;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: -6px;
 }
 
 .resource-badge.status-draft {
@@ -281,6 +324,37 @@
 
 .resource-link {
   text-decoration: none;
+}
+
+/* Better alignment for status and actions columns */
+.resource-publish-btn {
+  background: #10b981;
+  color: white;
+  border: none;
+  margin-left: 0;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+  white-space: nowrap;
+}
+
+.resource-publish-btn:hover {
+  background: #059669;
+}
+
+/* smaller status badge */
+.resource-badge.status-draft,
+.resource-badge.status-published {
+  min-width: 70px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 0;
+  white-space: nowrap;
 }
 
 @media (max-width: 1100px) {
