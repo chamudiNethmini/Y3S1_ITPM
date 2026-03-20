@@ -5,7 +5,6 @@ const connectDB = require("./config/db");
 
 const ticketRoutes = require("./routes/ticketRoutes");
 const authRoutes = require("./routes/authRoutes");
-const timetableEntryRoutes = require("./routes/timetableEntryRoutes");
 
 const app = express();
 
@@ -19,7 +18,6 @@ app.use(express.json());
 // Routes
 app.use("/api/tickets", ticketRoutes);
 app.use("/api/auth", authRoutes);
-app.use("/api/timetable-entries", timetableEntryRoutes);
 
 // Test route
 app.get("/", (req, res) => {
