@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import API from "../services/api";
+<<<<<<< Updated upstream
 import { useNavigate } from "react-router-dom";
 import "../styles/AuditLog.css";
 
@@ -8,6 +9,12 @@ function AdminDashboard() {
   // ===========================
   // STATES
   // ===========================
+=======
+import "../styles/AuditLog.css"; // 👈 add this
+
+function AdminDashboard() {
+
+>>>>>>> Stashed changes
   const [users, setUsers] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [tickets, setTickets] = useState([]);
@@ -17,6 +24,7 @@ function AdminDashboard() {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("lic");
 
+<<<<<<< Updated upstream
   const [replyTexts, setReplyTexts] = useState({});
 
   const navigate = useNavigate();
@@ -24,6 +32,8 @@ function AdminDashboard() {
   // ===========================
   // FETCH USERS
   // ===========================
+=======
+>>>>>>> Stashed changes
   const fetchUsers = async () => {
     try {
       const res = await API.get("/auth/all-users");
@@ -33,9 +43,12 @@ function AdminDashboard() {
     }
   };
 
+<<<<<<< Updated upstream
   // ===========================
   // FETCH AUDIT LOGS
   // ===========================
+=======
+>>>>>>> Stashed changes
   const fetchAuditLogs = async () => {
     try {
       const res = await API.get("/auth/audit-logs");
@@ -45,6 +58,7 @@ function AdminDashboard() {
     }
   };
 
+<<<<<<< Updated upstream
   // ===========================
   // FETCH TICKETS
   // ===========================
@@ -60,6 +74,8 @@ function AdminDashboard() {
   // ===========================
   // CREATE USER
   // ===========================
+=======
+>>>>>>> Stashed changes
   const handleCreateUser = async () => {
     try {
       await API.post("/auth/create-user", {
@@ -81,9 +97,12 @@ function AdminDashboard() {
     }
   };
 
+<<<<<<< Updated upstream
   // ===========================
   // DELETE USER
   // ===========================
+=======
+>>>>>>> Stashed changes
   const handleDelete = async (id) => {
     try {
       await API.delete(`/auth/delete-user/${id}`);
@@ -94,6 +113,7 @@ function AdminDashboard() {
     }
   };
 
+<<<<<<< Updated upstream
   // ===========================
   // TOGGLE USER STATUS
   // ===========================
@@ -101,6 +121,17 @@ function AdminDashboard() {
     try {
       const newStatus = currentStatus === "active" ? "suspended" : "active";
       await API.put(`/auth/update-status/${id}`, { status: newStatus });
+=======
+  const handleStatusChange = async (id, currentStatus) => {
+    try {
+      const newStatus =
+        currentStatus === "active" ? "suspended" : "active";
+
+      await API.put(`/auth/update-status/${id}`, {
+        status: newStatus,
+      });
+
+>>>>>>> Stashed changes
       fetchUsers();
       fetchAuditLogs();
     } catch (error) {
@@ -108,6 +139,7 @@ function AdminDashboard() {
     }
   };
 
+<<<<<<< Updated upstream
   // ===========================
   // HANDLE TICKET REPLY INPUT
   // ===========================
@@ -141,6 +173,8 @@ function AdminDashboard() {
   // ===========================
   // INITIAL LOAD
   // ===========================
+=======
+>>>>>>> Stashed changes
   useEffect(() => {
     fetchUsers();
     fetchAuditLogs();
@@ -151,6 +185,7 @@ function AdminDashboard() {
     <div className="page">
       <h2>Admin Dashboard</h2>
 
+<<<<<<< Updated upstream
       {/* NAVIGATION */}
       <button
         onClick={() => navigate("/tickets")}
@@ -160,6 +195,8 @@ function AdminDashboard() {
       </button>
 
       {/* CREATE USER */}
+=======
+>>>>>>> Stashed changes
       <div style={{ marginBottom: "30px" }}>
         <h3>Create New User</h3>
 
@@ -193,7 +230,10 @@ function AdminDashboard() {
         <button onClick={handleCreateUser}>Create</button>
       </div>
 
+<<<<<<< Updated upstream
       {/* USERS */}
+=======
+>>>>>>> Stashed changes
       <h3>Users</h3>
       <table border="1" cellPadding="10">
         <thead>
@@ -231,7 +271,11 @@ function AdminDashboard() {
         </tbody>
       </table>
 
+<<<<<<< Updated upstream
       {/* AUDIT LOGS WITH SCROLL */}
+=======
+      {/* ✅ ONLY CHANGE HERE */}
+>>>>>>> Stashed changes
       <h3 style={{ marginTop: "40px" }}>Audit Logs</h3>
 
       <div className="audit-container">
@@ -242,6 +286,7 @@ function AdminDashboard() {
               <th>Performed By</th>
               <th>Target User</th>
               <th>Time</th>
+<<<<<<< Updated upstream
             </tr>
           </thead>
           <tbody>
@@ -312,6 +357,32 @@ function AdminDashboard() {
           ))}
         </tbody>
       </table>
+=======
+            </tr>
+          </thead>
+
+          <tbody>
+            {auditLogs.map((log) => (
+              <tr key={log._id}>
+                <td>{log.action}</td>
+                <td>
+                  {log.performedBy
+                    ? `${log.performedBy.name} (${log.performedBy.email})`
+                    : "N/A"}
+                </td>
+                <td>
+                  {log.targetUser
+                    ? `${log.targetUser.name} (${log.targetUser.email})`
+                    : "N/A"}
+                </td>
+                <td>{new Date(log.timestamp).toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+>>>>>>> Stashed changes
     </div>
   );
 }
