@@ -270,18 +270,20 @@ function CoordinatorDashboard() {
             </button>
 
             <button
+              className={`tab-btn ${activeSection === "session" ? "active-tab" : ""}`}
+              onClick={() => setActiveSection("session")}
+            >
+              Session Management
+            </button>
+
+            <button
               className={`tab-btn ${activeSection === "timetable" ? "active-tab" : ""}`}
               onClick={() => setActiveSection("timetable")}
             >
               Timetable Management
             </button>
 
-            <button
-              className={`tab-btn ${activeSection === "session" ? "active-tab" : ""}`}
-              onClick={() => setActiveSection("session")}
-            >
-              Session Management
-            </button>
+            
           </div>
 
           <div className="management-content">
