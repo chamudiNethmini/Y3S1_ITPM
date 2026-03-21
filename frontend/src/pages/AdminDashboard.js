@@ -273,45 +273,54 @@ function AdminDashboard() {
   // ================= CREATE USER =================
 
   const handleCreateUser = async () => {
-    if (!name || !email || !password) {
-      alert("All fields are required");
-      return;
-    }
+  if (!name || !email || !password) {
+    alert("All fields are required");
+    return;
+  }
 
-    if (role === "lic" && !moduleCode) {
-      alert("Module code is required for LIC users");
-      return;
-    }
+  if (role === "lic" && !moduleCode) {
+    alert("Module code is required for LIC users");
+    return;
+  }
 
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!emailPattern.test(email)) {
-      alert("Invalid email format");
-      return;
-    }
+  if (!emailPattern.test(email)) {
+    alert("Invalid email format");
+    return;
+  }
 
-    try {
-      await API.post("/auth/create-user", {
-        name,
-        email,
-        password,
-        role,
-        moduleCode: role === "lic" ? moduleCode : undefined
-      });
+  // 🔥 PASSWORD VALIDATION (NEW)
+  if (password.length < 8 || password.length > 12) {
+    alert("Password must be between 8 and 12 characters");
+    return;
+  }
 
-      setName("");
-      setEmail("");
-      setPassword("");
-      setRole("lic");
-      setModuleCode("");
-      setModuleSearch("");
+  try {
+    await API.post("/auth/create-user", {
+      name,
+      email,
+      password,
+      role,
+      moduleCode: role === "lic" ? moduleCode : undefined
+    });
 
-      fetchUsers();
-      fetchAuditLogs();
-    } catch (error) {
-      alert(error.response?.data?.message || "Error creating user");
-    }
-  };
+    alert("User created successfully");
+
+    setName("");
+    setEmail("");
+    setPassword("");
+    setRole("lic");
+    setModuleCode("");
+    setModuleSearch("");
+
+    fetchUsers();
+    fetchAuditLogs();
+
+  } catch (error) {
+    alert(error.response?.data?.message || "Error creating user");
+  }
+};
 
   // ================= DELETE =================
 
