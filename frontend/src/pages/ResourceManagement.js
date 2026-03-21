@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   getResources,
   createResource,
@@ -11,6 +11,7 @@ function ResourceManagement() {
   const initialForm = {
     resourceType: "lecturer",
     name: "",
+    batchNo: "",
     code: "",
     department: "",
     capacity: "",
@@ -25,6 +26,8 @@ function ResourceManagement() {
   const [editingId, setEditingId] = useState(null);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+
+  const formCardRef = useRef(null);
 
   const fetchResources = async () => {
     try {
@@ -42,6 +45,14 @@ function ResourceManagement() {
     fetchResources();
   }, [filterType]);
 
+  const getColumnCount = () => {
+    if (filterType === "lecturer") return 5;
+    if (filterType === "hall") return 6;
+    if (filterType === "module") return 6;
+    if (filterType === "batch") return 8;
+    return 9;
+  };
+
   const validateForm = () => {
     const newErrors = {};
 
@@ -49,16 +60,80 @@ function ResourceManagement() {
       newErrors.resourceType = "Resource type is required";
     }
 
-    if (!formData.name.trim()) {
-      newErrors.name = "Resource name is required";
+    if (formData.resourceType === "lecturer") {
+      if (!formData.name.trim()) {
+        newErrors.name = "Lecturer name is required";
+      }
+
+      if (!formData.department.trim()) {
+        newErrors.department = "Department is required";
+      }
     }
 
-    if (formData.capacity !== "" && Number(formData.capacity) < 0) {
-      newErrors.capacity = "Capacity cannot be negative";
+    if (formData.resourceType === "hall") {
+      if (!formData.name.trim()) {
+        newErrors.name = "Location is required";
+      } else if (!/^[A-Z]/.test(formData.name.trim())) {
+        newErrors.name = "Location must start with a capital letter";
+      }
+
+      if (!formData.department.trim()) {
+        newErrors.department = "Department is required";
+      }
+
+      if (formData.capacity === "") {
+        newErrors.capacity = "Capacity is required";
+      } else if (Number(formData.capacity) <= 0) {
+        newErrors.capacity = "Capacity must be greater than 0";
+      }
     }
 
-    if (formData.code.length > 20) {
-      newErrors.code = "Code must be less than 20 characters";
+    if (formData.resourceType === "module") {
+      if (!formData.name.trim()) {
+        newErrors.name = "Module name is required";
+      }
+
+      if (!formData.code.trim()) {
+        newErrors.code = "Module code is required";
+      } else if (!/^[A-Z]{2}/.test(formData.code.trim())) {
+        newErrors.code = "Module code must start with 2 capital letters";
+      } else if (formData.code.trim().length > 20) {
+        newErrors.code = "Code must be less than 20 characters";
+      }
+
+      if (!formData.department.trim()) {
+        newErrors.department = "Department is required";
+      }
+    }
+
+    if (formData.resourceType === "batch") {
+      if (!formData.batchNo.trim()) {
+        newErrors.batchNo = "Batch number is required";
+      } else if (!/^\d\.\d$/.test(formData.batchNo.trim())) {
+        newErrors.batchNo = "Batch number must be in format like 3.2";
+      }
+
+      if (!formData.department.trim()) {
+        newErrors.department = "Department is required";
+      }
+
+      if (formData.capacity === "") {
+        newErrors.capacity = "Capacity is required";
+      } else if (Number(formData.capacity) <= 0) {
+        newErrors.capacity = "Capacity must be greater than 0";
+      }
+
+      if (!formData.semester.trim()) {
+        newErrors.semester = "Semester is required";
+      } else if (!/^\d$/.test(formData.semester.trim())) {
+        newErrors.semester = "Semester must be only one number";
+      }
+
+      if (!formData.academicYear.trim()) {
+        newErrors.academicYear = "Academic year is required";
+      } else if (!/^\d$/.test(formData.academicYear.trim())) {
+        newErrors.academicYear = "Academic year must be only one number";
+      }
     }
 
     setErrors(newErrors);
@@ -68,10 +143,34 @@ function ResourceManagement() {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    let updatedValue = value;
+
+    if (name === "batchNo") {
+      updatedValue = value.replace(/[^0-9.]/g, "").slice(0, 3);
+
+      const dotCount = (updatedValue.match(/\./g) || []).length;
+      if (dotCount > 1) {
+        return;
+      }
+    }
+
+    if (name === "semester" || name === "academicYear") {
+      updatedValue = value.replace(/\D/g, "").slice(0, 1);
+    }
+
+    let updatedData = {
+      ...formData,
+      [name]: updatedValue,
+    };
+
+    if (name === "resourceType") {
+      updatedData = {
+        ...initialForm,
+        resourceType: value,
+      };
+    }
+
+    setFormData(updatedData);
 
     setErrors((prev) => ({
       ...prev,
@@ -85,8 +184,15 @@ function ResourceManagement() {
     if (!validateForm()) return;
 
     const payload = {
-      ...formData,
+      resourceType: formData.resourceType,
+      name: formData.name.trim(),
+      batchNo: formData.batchNo.trim(),
+      code: formData.code.trim(),
+      department: formData.department.trim(),
       capacity: formData.capacity === "" ? 0 : Number(formData.capacity),
+      semester: formData.semester.trim(),
+      academicYear: formData.academicYear.trim(),
+      description: formData.description.trim(),
     };
 
     try {
@@ -112,6 +218,7 @@ function ResourceManagement() {
     setFormData({
       resourceType: resource.resourceType || "lecturer",
       name: resource.name || "",
+      batchNo: resource.batchNo || "",
       code: resource.code || "",
       department: resource.department || "",
       capacity: resource.capacity || "",
@@ -120,7 +227,13 @@ function ResourceManagement() {
       description: resource.description || "",
     });
     setErrors({});
-    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    setTimeout(() => {
+      formCardRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 100);
   };
 
   const handleDelete = async (id) => {
@@ -152,6 +265,271 @@ function ResourceManagement() {
     return "resource-badge";
   };
 
+  const renderTableHeader = () => {
+    if (filterType === "lecturer") {
+      return (
+        <tr>
+          <th>Type</th>
+          <th>Lecturer Name</th>
+          <th>Department</th>
+          <th>Description</th>
+          <th>Actions</th>
+        </tr>
+      );
+    }
+
+    if (filterType === "hall") {
+      return (
+        <tr>
+          <th>Type</th>
+          <th>Location</th>
+          <th>Department</th>
+          <th>Capacity</th>
+          <th>Description</th>
+          <th>Actions</th>
+        </tr>
+      );
+    }
+
+    if (filterType === "module") {
+      return (
+        <tr>
+          <th>Type</th>
+          <th>Module Name</th>
+          <th>Code</th>
+          <th>Department</th>
+          <th>Description</th>
+          <th>Actions</th>
+        </tr>
+      );
+    }
+
+    if (filterType === "batch") {
+      return (
+        <tr>
+          <th>Type</th>
+          <th>Batch Number</th>
+          <th>Department</th>
+          <th>Capacity</th>
+          <th>Semester</th>
+          <th>Academic Year</th>
+          <th>Description</th>
+          <th>Actions</th>
+        </tr>
+      );
+    }
+
+    return (
+      <tr>
+        <th>Type</th>
+        <th>Name / Batch</th>
+        <th>Code</th>
+        <th>Department</th>
+        <th>Capacity</th>
+        <th>Semester</th>
+        <th>Academic Year</th>
+        <th>Description</th>
+        <th>Actions</th>
+      </tr>
+    );
+  };
+
+  const renderTableRows = () => {
+    if (loading) {
+      return (
+        <tr>
+          <td colSpan={getColumnCount()} className="resource-empty">
+            Loading resources...
+          </td>
+        </tr>
+      );
+    }
+
+    if (resources.length === 0) {
+      return (
+        <tr>
+          <td colSpan={getColumnCount()} className="resource-empty">
+            No resources found
+          </td>
+        </tr>
+      );
+    }
+
+    return resources.map((resource) => {
+      if (filterType === "lecturer") {
+        return (
+          <tr key={resource._id}>
+            <td>
+              <span className={getTypeClass(resource.resourceType)}>
+                {resource.resourceType}
+              </span>
+            </td>
+            <td>{resource.name || "-"}</td>
+            <td>{resource.department || "-"}</td>
+            <td>{resource.description || "-"}</td>
+            <td>
+              <div className="resource-btn-group">
+                <button
+                  className="resource-edit-btn"
+                  onClick={() => handleEdit(resource)}
+                  type="button"
+                >
+                  Edit
+                </button>
+                <button
+                  className="resource-delete-btn"
+                  onClick={() => handleDelete(resource._id)}
+                  type="button"
+                >
+                  Delete
+                </button>
+              </div>
+            </td>
+          </tr>
+        );
+      }
+
+      if (filterType === "hall") {
+        return (
+          <tr key={resource._id}>
+            <td>
+              <span className={getTypeClass(resource.resourceType)}>
+                {resource.resourceType}
+              </span>
+            </td>
+            <td>{resource.name || "-"}</td>
+            <td>{resource.department || "-"}</td>
+            <td>{resource.capacity ?? "-"}</td>
+            <td>{resource.description || "-"}</td>
+            <td>
+              <div className="resource-btn-group">
+                <button
+                  className="resource-edit-btn"
+                  onClick={() => handleEdit(resource)}
+                  type="button"
+                >
+                  Edit
+                </button>
+                <button
+                  className="resource-delete-btn"
+                  onClick={() => handleDelete(resource._id)}
+                  type="button"
+                >
+                  Delete
+                </button>
+              </div>
+            </td>
+          </tr>
+        );
+      }
+
+      if (filterType === "module") {
+        return (
+          <tr key={resource._id}>
+            <td>
+              <span className={getTypeClass(resource.resourceType)}>
+                {resource.resourceType}
+              </span>
+            </td>
+            <td>{resource.name || "-"}</td>
+            <td>{resource.code || "-"}</td>
+            <td>{resource.department || "-"}</td>
+            <td>{resource.description || "-"}</td>
+            <td>
+              <div className="resource-btn-group">
+                <button
+                  className="resource-edit-btn"
+                  onClick={() => handleEdit(resource)}
+                  type="button"
+                >
+                  Edit
+                </button>
+                <button
+                  className="resource-delete-btn"
+                  onClick={() => handleDelete(resource._id)}
+                  type="button"
+                >
+                  Delete
+                </button>
+              </div>
+            </td>
+          </tr>
+        );
+      }
+
+      if (filterType === "batch") {
+        return (
+          <tr key={resource._id}>
+            <td>
+              <span className={getTypeClass(resource.resourceType)}>
+                {resource.resourceType}
+              </span>
+            </td>
+            <td>{resource.batchNo || resource.name || "-"}</td>
+            <td>{resource.department || "-"}</td>
+            <td>{resource.capacity ?? "-"}</td>
+            <td>{resource.semester || "-"}</td>
+            <td>{resource.academicYear || "-"}</td>
+            <td>{resource.description || "-"}</td>
+            <td>
+              <div className="resource-btn-group">
+                <button
+                  className="resource-edit-btn"
+                  onClick={() => handleEdit(resource)}
+                  type="button"
+                >
+                  Edit
+                </button>
+                <button
+                  className="resource-delete-btn"
+                  onClick={() => handleDelete(resource._id)}
+                  type="button"
+                >
+                  Delete
+                </button>
+              </div>
+            </td>
+          </tr>
+        );
+      }
+
+      return (
+        <tr key={resource._id}>
+          <td>
+            <span className={getTypeClass(resource.resourceType)}>
+              {resource.resourceType}
+            </span>
+          </td>
+          <td>{resource.batchNo || resource.name || "-"}</td>
+          <td>{resource.code || "-"}</td>
+          <td>{resource.department || "-"}</td>
+          <td>{resource.capacity ?? "-"}</td>
+          <td>{resource.semester || "-"}</td>
+          <td>{resource.academicYear || "-"}</td>
+          <td>{resource.description || "-"}</td>
+          <td>
+            <div className="resource-btn-group">
+              <button
+                className="resource-edit-btn"
+                onClick={() => handleEdit(resource)}
+                type="button"
+              >
+                Edit
+              </button>
+              <button
+                className="resource-delete-btn"
+                onClick={() => handleDelete(resource._id)}
+                type="button"
+              >
+                Delete
+              </button>
+            </div>
+          </td>
+        </tr>
+      );
+    });
+  };
+
   return (
     <div className="resource-section">
       <div className="resource-card">
@@ -163,7 +541,7 @@ function ResourceManagement() {
         </div>
       </div>
 
-      <div className="resource-card">
+      <div className="resource-card" ref={formCardRef}>
         <div className="resource-header">
           <div>
             <h3>{editingId ? "Edit Resource" : "Add New Resource"}</h3>
@@ -192,82 +570,214 @@ function ResourceManagement() {
               )}
             </div>
 
-            <div className="resource-form-group">
-              <label>Resource Name</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Enter resource name"
-                className="resource-input"
-              />
-              {errors.name && <small className="error-text">{errors.name}</small>}
-            </div>
+            {formData.resourceType === "lecturer" && (
+              <>
+                <div className="resource-form-group">
+                  <label>Lecturer Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="Enter lecturer name"
+                    className="resource-input"
+                  />
+                  {errors.name && <small className="error-text">{errors.name}</small>}
+                </div>
 
-            <div className="resource-form-group">
-              <label>Code</label>
-              <input
-                type="text"
-                name="code"
-                value={formData.code}
-                onChange={handleChange}
-                placeholder="Enter code"
-                className="resource-input"
-              />
-              {errors.code && <small className="error-text">{errors.code}</small>}
-            </div>
+                <div className="resource-form-group">
+                  <label>Department</label>
+                  <input
+                    type="text"
+                    name="department"
+                    value={formData.department}
+                    onChange={handleChange}
+                    placeholder="Enter department"
+                    className="resource-input"
+                  />
+                  {errors.department && (
+                    <small className="error-text">{errors.department}</small>
+                  )}
+                </div>
+              </>
+            )}
 
-            <div className="resource-form-group">
-              <label>Department</label>
-              <input
-                type="text"
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-                placeholder="Enter department"
-                className="resource-input"
-              />
-            </div>
+            {formData.resourceType === "hall" && (
+              <>
+                <div className="resource-form-group">
+                  <label>Location</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="Enter hall location"
+                    className="resource-input"
+                  />
+                  {errors.name && <small className="error-text">{errors.name}</small>}
+                </div>
 
-            <div className="resource-form-group">
-              <label>Capacity</label>
-              <input
-                type="number"
-                name="capacity"
-                value={formData.capacity}
-                onChange={handleChange}
-                placeholder="Enter capacity"
-                className="resource-input"
-              />
-              {errors.capacity && (
-                <small className="error-text">{errors.capacity}</small>
-              )}
-            </div>
+                <div className="resource-form-group">
+                  <label>Department</label>
+                  <input
+                    type="text"
+                    name="department"
+                    value={formData.department}
+                    onChange={handleChange}
+                    placeholder="Enter department"
+                    className="resource-input"
+                  />
+                  {errors.department && (
+                    <small className="error-text">{errors.department}</small>
+                  )}
+                </div>
 
-            <div className="resource-form-group">
-              <label>Semester</label>
-              <input
-                type="text"
-                name="semester"
-                value={formData.semester}
-                onChange={handleChange}
-                placeholder="Enter semester"
-                className="resource-input"
-              />
-            </div>
+                <div className="resource-form-group">
+                  <label>Capacity</label>
+                  <input
+                    type="number"
+                    name="capacity"
+                    value={formData.capacity}
+                    onChange={handleChange}
+                    placeholder="Enter capacity"
+                    className="resource-input"
+                    min="1"
+                  />
+                  {errors.capacity && (
+                    <small className="error-text">{errors.capacity}</small>
+                  )}
+                </div>
+              </>
+            )}
 
-            <div className="resource-form-group">
-              <label>Academic Year</label>
-              <input
-                type="text"
-                name="academicYear"
-                value={formData.academicYear}
-                onChange={handleChange}
-                placeholder="Enter academic year"
-                className="resource-input"
-              />
-            </div>
+            {formData.resourceType === "module" && (
+              <>
+                <div className="resource-form-group">
+                  <label>Module Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="Enter module name"
+                    className="resource-input"
+                  />
+                  {errors.name && <small className="error-text">{errors.name}</small>}
+                </div>
+
+                <div className="resource-form-group">
+                  <label>Code</label>
+                  <input
+                    type="text"
+                    name="code"
+                    value={formData.code}
+                    onChange={handleChange}
+                    placeholder="Enter module code"
+                    className="resource-input"
+                    maxLength="20"
+                  />
+                  {errors.code && <small className="error-text">{errors.code}</small>}
+                </div>
+
+                <div className="resource-form-group">
+                  <label>Department</label>
+                  <input
+                    type="text"
+                    name="department"
+                    value={formData.department}
+                    onChange={handleChange}
+                    placeholder="Enter department"
+                    className="resource-input"
+                  />
+                  {errors.department && (
+                    <small className="error-text">{errors.department}</small>
+                  )}
+                </div>
+              </>
+            )}
+
+            {formData.resourceType === "batch" && (
+              <>
+                <div className="resource-form-group">
+                  <label>Batch Number</label>
+                  <input
+                    type="text"
+                    name="batchNo"
+                    value={formData.batchNo}
+                    onChange={handleChange}
+                    placeholder="Enter batch number like 3.2"
+                    className="resource-input"
+                    maxLength="3"
+                  />
+                  {errors.batchNo && (
+                    <small className="error-text">{errors.batchNo}</small>
+                  )}
+                </div>
+
+                <div className="resource-form-group">
+                  <label>Department</label>
+                  <input
+                    type="text"
+                    name="department"
+                    value={formData.department}
+                    onChange={handleChange}
+                    placeholder="Enter department"
+                    className="resource-input"
+                  />
+                  {errors.department && (
+                    <small className="error-text">{errors.department}</small>
+                  )}
+                </div>
+
+                <div className="resource-form-group">
+                  <label>Capacity</label>
+                  <input
+                    type="number"
+                    name="capacity"
+                    value={formData.capacity}
+                    onChange={handleChange}
+                    placeholder="Enter capacity"
+                    className="resource-input"
+                    min="1"
+                  />
+                  {errors.capacity && (
+                    <small className="error-text">{errors.capacity}</small>
+                  )}
+                </div>
+
+                <div className="resource-form-group">
+                  <label>Semester</label>
+                  <input
+                    type="text"
+                    name="semester"
+                    value={formData.semester}
+                    onChange={handleChange}
+                    placeholder="Enter semester"
+                    className="resource-input"
+                    maxLength="1"
+                  />
+                  {errors.semester && (
+                    <small className="error-text">{errors.semester}</small>
+                  )}
+                </div>
+
+                <div className="resource-form-group">
+                  <label>Academic Year</label>
+                  <input
+                    type="text"
+                    name="academicYear"
+                    value={formData.academicYear}
+                    onChange={handleChange}
+                    placeholder="Enter academic year"
+                    className="resource-input"
+                    maxLength="1"
+                  />
+                  {errors.academicYear && (
+                    <small className="error-text">{errors.academicYear}</small>
+                  )}
+                </div>
+              </>
+            )}
 
             <div className="resource-form-group resource-full-width">
               <label>Description</label>
@@ -321,69 +831,8 @@ function ResourceManagement() {
 
         <div className="resource-table-wrapper">
           <table className="resource-table">
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Name</th>
-                <th>Code</th>
-                <th>Department</th>
-                <th>Capacity</th>
-                <th>Semester</th>
-                <th>Academic Year</th>
-                <th>Description</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan="9" className="resource-empty">
-                    Loading resources...
-                  </td>
-                </tr>
-              ) : resources.length > 0 ? (
-                resources.map((resource) => (
-                  <tr key={resource._id}>
-                    <td>
-                      <span className={getTypeClass(resource.resourceType)}>
-                        {resource.resourceType}
-                      </span>
-                    </td>
-                    <td>{resource.name}</td>
-                    <td>{resource.code || "-"}</td>
-                    <td>{resource.department || "-"}</td>
-                    <td>{resource.capacity ?? "-"}</td>
-                    <td>{resource.semester || "-"}</td>
-                    <td>{resource.academicYear || "-"}</td>
-                    <td>{resource.description || "-"}</td>
-                    <td>
-                      <div className="resource-btn-group">
-                        <button
-                          className="resource-edit-btn"
-                          onClick={() => handleEdit(resource)}
-                          type="button"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="resource-delete-btn"
-                          onClick={() => handleDelete(resource._id)}
-                          type="button"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="9" className="resource-empty">
-                    No resources found
-                  </td>
-                </tr>
-              )}
-            </tbody>
+            <thead>{renderTableHeader()}</thead>
+            <tbody>{renderTableRows()}</tbody>
           </table>
         </div>
       </div>
