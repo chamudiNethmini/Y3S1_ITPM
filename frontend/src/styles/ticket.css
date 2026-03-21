@@ -1,0 +1,150 @@
+
+body, .page {
+  background-color: #c8cbcf; /* light gray page background */
+  font-family: Arial, sans-serif;
+}
+
+
+
+.card {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  margin: 20px 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+/* ✅ FIX 1: Remove global styling from input */
+textarea, select {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+/* ✅ Subject input (plain, no color) */
+input[type="text"] {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-bottom: 2px solid #ccc;
+  background: transparent;
+  outline: none;
+}
+
+/* Focus effect (professional look) */
+input[type="text"]:focus {
+  border-bottom: 2px solid #007bff;
+}
+
+textarea {
+  height: 180px;
+  resize: vertical;
+}
+
+.btn-primary {
+  background: #007bff;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background: gray;
+  color: white;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+}
+
+.small {
+  padding: 6px 10px;
+}
+
+.filter-bar {
+  margin: 20px 0;
+}
+
+/* ================= TABLE ================= */
+
+.table-container {
+  overflow-x: auto;
+}
+
+.ticket-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* ✅ FIX 2: Table header clearly visible */
+.ticket-table th {
+  background: #222;   /* dark background */
+  color: white;       /* white text */
+  font-weight: bold;
+  text-align: left;
+}
+
+.ticket-table th, 
+.ticket-table td {
+  border: 1px solid #ddd;
+  padding: 12px;
+}
+
+/* ================= STATUS ================= */
+
+/* base style */
+.status {
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-weight: 600;
+}
+
+/* ✅ FIX 3: readable pending */
+.status.pending {
+  background: #ffe5b4;   /* light orange */
+  color: #cc7a00;        /* dark orange text */
+}
+
+/* ✅ FIX 4: resolved/replied green */
+.status.resolved {
+  background: #d4edda;
+  color: #155724;
+}
+
+/* reply box */
+.reply-box {
+  display: flex;
+  gap: 5px;
+}
+
+.message-cell {
+  max-width: 250px;
+  word-wrap: break-word;
+}
+
+/* ================= STATUS ================= */
+
+/* base style */
+.status {
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-weight: 600;
+}
+
+/* 🔴 pending → RED */
+.status.pending {
+  background: #f8d7da;
+  color: #dc3545;
+}
+
+/* 🟢 replied → GREEN */
+.status.replied {
+  background: #d4edda;
+  color: #28a745;
+}

@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import API from "../services/api";
+import { useNavigate } from "react-router-dom";
 import "../styles/AdminDashboard.css";
 import Navbar from "../components/Navbar";
 
 function AdminDashboard() {
-
   const [users, setUsers] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
+  const navigate = useNavigate();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -71,7 +72,6 @@ function AdminDashboard() {
 
       fetchUsers();
       fetchAuditLogs();
-
     } catch (error) {
       alert(error.response?.data?.message || "Error creating user");
     }
@@ -80,19 +80,20 @@ function AdminDashboard() {
   // ================= DELETE =================
 
   const handleDelete = async (id) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this user?"
+    );
 
-  const confirmDelete = window.confirm("Are you sure you want to delete this user?");
+    if (!confirmDelete) return;
 
-  if (!confirmDelete) return; // ❌ cancel una nam stop
-
-  try {
-    await API.delete(`/auth/delete-user/${id}`);
-    fetchUsers();
-    fetchAuditLogs();
-  } catch (error) {
-    alert(error.response?.data?.message || "Error deleting user");
-  }
-};
+    try {
+      await API.delete(`/auth/delete-user/${id}`);
+      fetchUsers();
+      fetchAuditLogs();
+    } catch (error) {
+      alert(error.response?.data?.message || "Error deleting user");
+    }
+  };
 
   // ================= STATUS =================
 
@@ -107,7 +108,6 @@ function AdminDashboard() {
 
       fetchUsers();
       fetchAuditLogs();
-
     } catch (error) {
       console.log(error);
     }
@@ -148,14 +148,23 @@ function AdminDashboard() {
       <Navbar />
 
       <div className="admin-page">
-
         {/* HERO */}
         <div className="admin-hero">
           <h1>Admin Dashboard</h1>
           <p>Manage users, roles and system access.</p>
         </div>
 
-        {/* 🔥 STATS CARDS */}
+        {/* RAISE TICKET BUTTON */}
+        <div style={{ marginBottom: "20px" }}>
+          <button
+            className="primary-btn"
+            onClick={() => navigate("/ticket")}
+          >
+            Raise Ticket
+          </button>
+        </div>
+
+        {/* STATS CARDS */}
         <div className="stats-grid">
           <div className="stat-card stat-blue">
             <span className="stat-title">Total Users</span>
@@ -178,13 +187,30 @@ function AdminDashboard() {
           <h3>Create New User</h3>
 
           <div className="form-grid">
-            <input type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
-            <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <input
+              type="text"
+              placeholder="Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
 
             <select value={role} onChange={(e) => setRole(e.target.value)}>
               <option value="lic">LIC</option>
-              <option value="coordinator">Coordinator</option>
+              <option value="coordinator">Academic Coordinator</option>
               <option value="admin">Admin</option>
             </select>
           </div>
@@ -196,9 +222,7 @@ function AdminDashboard() {
 
         {/* USERS */}
         <div className="admin-card">
-
           <div className="top-bar">
-
             <input
               type="text"
               placeholder="Search by name, email or role..."
@@ -217,7 +241,6 @@ function AdminDashboard() {
               <option value="lic">LIC</option>
               <option value="coordinator">Coordinator</option>
             </select>
-
           </div>
 
           <table className="admin-table">
@@ -237,13 +260,11 @@ function AdminDashboard() {
                   <td>{user.name}</td>
                   <td>{user.email}</td>
                   <td>{user.role}</td>
-
                   <td>
                     <span className={`status ${user.status}`}>
                       {user.status}
                     </span>
                   </td>
-
                   <td>
                     <button
                       className="warning-btn"
@@ -251,9 +272,7 @@ function AdminDashboard() {
                         handleStatusChange(user._id, user.status)
                       }
                     >
-                      {user.status === "active"
-                        ? "Suspend"
-                        : "Activate"}
+                      {user.status === "active" ? "Suspend" : "Activate"}
                     </button>
 
                     {user.role !== "admin" && (
@@ -307,7 +326,6 @@ function AdminDashboard() {
             </table>
           </div>
         </div>
-
       </div>
     </>
   );
