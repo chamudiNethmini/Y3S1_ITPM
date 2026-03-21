@@ -1,22 +1,23 @@
-/* PAGE */
+/* ================= PAGE ================= */
 .lecturer-page {
   padding: 24px;
-  margin-top: 70px;
   background: linear-gradient(180deg, #eef4ff 0%, #f8fbff 100%);
   min-height: 100vh;
 }
 
-/* HERO */
+/* ================= HERO ================= */
 .lecturer-hero {
   background: linear-gradient(135deg, #2563eb, #3b82f6);
   color: white;
-  padding: 24px;
-  border-radius: 18px;
-  margin-bottom: 20px;
+  padding: 28px;
+  border-radius: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.25);
 }
 
 .lecturer-hero h1 {
-  margin: 0 0 5px;
+  margin: 0 0 6px;
+  font-size: 28px;
 }
 
 .lecturer-hero p {
@@ -24,59 +25,63 @@
   opacity: 0.9;
 }
 
-/* CARD */
+/* ================= STATS ================= */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  padding: 20px;
+  border-radius: 18px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+}
+
+.stat-title {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.stat-card h2 {
+  margin: 0;
+  font-size: 26px;
+}
+
+.stat-blue {
+  border-left: 6px solid #2563eb;
+}
+
+.stat-green {
+  border-left: 6px solid #10b981;
+}
+
+.stat-yellow {
+  border-left: 6px solid #f59e0b;
+}
+
+/* ================= CARD ================= */
 .lecturer-card {
   background: white;
   padding: 22px;
   border-radius: 18px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+  margin-bottom: 24px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.07);
+  border: 1px solid #e5e7eb;
 }
 
-/* FORM */
-.form-group {
-  margin-bottom: 15px;
+.lecturer-card h3 {
+  margin: 0 0 16px;
+  color: #1f2937;
+  font-size: 18px;
 }
 
-.form-group label {
-  display: block;
-  margin-bottom: 6px;
-  font-weight: 600;
-}
-
-.form-group input,
-.form-group textarea {
-  width: 100%;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  outline: none;
-}
-
-.form-group textarea {
-  min-height: 120px;
-  resize: vertical;
-}
-
-/* BUTTON */
-.primary-btn {
-  background: #2563eb;
-  color: white;
-  border: none;
-  padding: 10px 18px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.primary-btn:hover {
-  background: #1d4ed8;
-}
-
-.primary-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
+/* ================= TABLE ================= */
 .lic-table {
   width: 100%;
   border-collapse: collapse;
@@ -84,16 +89,126 @@
 
 .lic-table th,
 .lic-table td {
-  padding: 12px;
-  border-bottom: 1px solid #eee;
+  padding: 14px;
+  border-bottom: 1px solid #edf1f7;
+  font-size: 14px;
+  text-align: left;
 }
 
 .lic-table th {
   background: #f3f7fd;
-  text-align: left;
+  font-weight: 700;
+  color: #374151;
+}
+
+.lic-table tr:hover {
+  background: #f9fbff;
 }
 
 .lic-table select {
-  padding: 6px;
+  padding: 8px 12px;
   border-radius: 8px;
+  border: 1px solid #d6deea;
+  background: #f9fbff;
+  width: 100%;
+  max-width: 200px;
+}
+
+.lecturer-select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #d6deea;
+  background: #f9fbff;
+  width: 100%;
+  max-width: 250px;
+  font-size: 13px;
+}
+
+/* ================= HOURS INDICATORS ================= */
+.hours-available {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.hours-full {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.remaining-hours {
+  color: #2563eb;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* ================= BUTTONS ================= */
+.primary-btn {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s;
+  font-size: 13px;
+}
+
+.primary-btn:hover {
+  background: #1d4ed8;
+  transform: translateY(-2px);
+}
+
+.primary-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ================= HALL CHECKER ================= */
+.hall-checker {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.hall-select {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #d6deea;
+  background: #f9fbff;
+  flex: 1;
+  min-width: 150px;
+}
+
+/* ================= EMPTY STATE ================= */
+.lic-table tbody tr td[colspan] {
+  text-align: center;
+  color: #6b7280;
+  padding: 30px;
+  font-style: italic;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 992px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hall-checker {
+    flex-direction: column;
+  }
+
+  .hall-select {
+    width: 100%;
+  }
+
+  .lic-table {
+    font-size: 12px;
+  }
+
+  .lic-table th,
+  .lic-table td {
+    padding: 10px;
+  }
 }

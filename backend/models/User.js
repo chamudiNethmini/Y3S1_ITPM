@@ -17,6 +17,13 @@ const userSchema = new mongoose.Schema({
     default: "pending"
   },
 
+  moduleCode: {
+    type: String,
+    required: function() {
+      return this.role === "lic";
+    }
+  },
+
   resetToken: String,
   resetTokenExpiry: Date,
 
