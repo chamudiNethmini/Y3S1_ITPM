@@ -25,11 +25,19 @@ function Navbar() {
         {/* RIGHT */}
         <div className="nav-right">
 
+          {/* 🔥 NEW 3 DOT BUTTON */}
+          <button
+            className="menu-btn"
+            onClick={() => navigate("/ticket")}
+          >
+            ⋮
+          </button>
+
           <button
             className="profile-btn"
             onClick={() => setShowProfile(true)}
           >
-            👤 Profile
+            👤
           </button>
 
           <button
@@ -42,7 +50,7 @@ function Navbar() {
         </div>
       </div>
 
-      {/* 🔥 PROFILE MODAL */}
+      {/* PROFILE MODAL */}
       {showProfile && (
         <ProfileModal onClose={() => setShowProfile(false)} />
       )}

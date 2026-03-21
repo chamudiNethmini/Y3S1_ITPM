@@ -53,3 +53,18 @@
 .logout-btn:hover {
   background: #dc2626;
 }
+
+.menu-btn {
+  background: white;
+  color: #2563eb;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.menu-btn:hover {
+  background: #eef4ff;
+}
