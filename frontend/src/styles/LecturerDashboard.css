@@ -3,6 +3,7 @@
   padding: 24px;
   background: linear-gradient(180deg, #eef4ff 0%, #f8fbff 100%);
   min-height: 100vh;
+  font-family: Arial, sans-serif;
 }
 
 /* ================= HERO ================= */
@@ -23,6 +24,7 @@
 .lecturer-hero p {
   margin: 0;
   opacity: 0.9;
+  font-size: 15px;
 }
 
 /* ================= STATS ================= */
@@ -46,11 +48,13 @@
   color: #6b7280;
   margin-bottom: 8px;
   display: block;
+  font-weight: 600;
 }
 
 .stat-card h2 {
   margin: 0;
   font-size: 26px;
+  color: #111827;
 }
 
 .stat-blue {
@@ -81,10 +85,78 @@
   font-size: 18px;
 }
 
+/* ================= SECTION HEADER ================= */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.section-header h3 {
+  margin: 0 0 6px;
+  color: #1f2937;
+  font-size: 20px;
+}
+
+.section-header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ================= FORM ================= */
+.form-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.two-cols {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: #374151;
+  font-weight: 600;
+}
+
+.lecturer-input {
+  width: 100%;
+  padding: 13px 15px;
+  border: 1px solid #d6deea;
+  border-radius: 14px;
+  outline: none;
+  font-size: 14px;
+  background: #f9fbff;
+  transition: 0.2s ease;
+}
+
+.lecturer-input:focus {
+  border-color: #3b82f6;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+}
+
+.action-row {
+  margin-top: 20px;
+}
+
+/* ================= TABLE WRAPPER ================= */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 12px;
+}
+
 /* ================= TABLE ================= */
 .lic-table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 780px;
 }
 
 .lic-table th,
@@ -93,6 +165,7 @@
   border-bottom: 1px solid #edf1f7;
   font-size: 14px;
   text-align: left;
+  vertical-align: top;
 }
 
 .lic-table th {
@@ -141,12 +214,29 @@
   font-size: 13px;
 }
 
+/* ================= STATUS BADGES ================= */
+.status-badge {
+  display: inline-block;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.status-badge.resolved {
+  background: #d1fae5;
+  color: #065f46;
+}
+
 /* ================= BUTTONS ================= */
 .primary-btn {
   background: #2563eb;
   color: white;
   border: none;
-  padding: 8px 16px;
+  padding: 10px 18px;
   border-radius: 10px;
   cursor: pointer;
   font-weight: 600;
@@ -179,6 +269,7 @@
   background: #f9fbff;
   flex: 1;
   min-width: 150px;
+  font-size: 14px;
 }
 
 /* ================= EMPTY STATE ================= */
@@ -195,8 +286,13 @@
     grid-template-columns: 1fr;
   }
 
+  .two-cols {
+    grid-template-columns: 1fr;
+  }
+
   .hall-checker {
     flex-direction: column;
+    align-items: stretch;
   }
 
   .hall-select {
@@ -210,5 +306,22 @@
   .lic-table th,
   .lic-table td {
     padding: 10px;
+  }
+}
+
+@media (max-width: 576px) {
+  .lecturer-page {
+    padding: 14px;
+  }
+
+  .lecturer-card,
+  .lecturer-hero,
+  .stat-card {
+    border-radius: 16px;
+    padding: 18px;
+  }
+
+  .lecturer-hero h1 {
+    font-size: 24px;
   }
 }
