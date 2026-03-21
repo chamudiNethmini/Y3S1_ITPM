@@ -108,11 +108,13 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* PUBLIC ROUTES */}
         <Route path="/" element={<Home />} />
         <Route path="/admin" element={<AdminLogin />} />
         <Route path="/coordinator" element={<CoordinatorLogin />} />
         <Route path="/lecturer" element={<LecturerLogin />} />
-        <Route path="/ticket" element={<Ticket />} /> {/* ✅ MUST HAVE */}
+
+        {/* PROTECTED DASHBOARD ROUTES */}
         <Route
           path="/admin-dashboard"
           element={
@@ -140,6 +142,8 @@ function App() {
           }
         />
 
+        {/* OTHER ROUTES */}
+        <Route path="/ticket" element={<Ticket />} />
         <Route path="/profile" element={<Profile />} />
       </Routes>
     </Router>
