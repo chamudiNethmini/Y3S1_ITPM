@@ -61,6 +61,52 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
+/* ================= MODULE CODE SECTION ================= */
+.module-code-section {
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+.module-search-input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  border: 1px solid #d6deea;
+  background: #f9fbff;
+  transition: 0.2s;
+}
+
+.module-search-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.module-select {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #d6deea;
+  background: #f9fbff;
+  transition: 0.2s;
+}
+
+.module-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* ================= NOT ASSIGNED ================= */
+.not-assigned {
+  color: #999;
+  font-style: italic;
+  font-size: 13px;
+}
+
 /* ================= BUTTONS ================= */
 .primary-btn {
   background: #2563eb;
@@ -205,6 +251,11 @@
 .status.suspended {
   background: #fee2e2;
   color: #991b1b;
+}
+
+.status.pending {
+  background: #fef3c7;
+  color: #92400e;
 }
 
 /* ================= EMPTY ================= */

@@ -446,30 +446,19 @@ function AdminDashboard() {
 
           {/* MODULE CODE FOR LIC */}
           {role === "lic" && (
-            <div style={{ marginTop: "15px" }}>
+            <div className="module-code-section">
               <input
                 type="text"
                 placeholder="Search module code..."
                 value={moduleSearch}
                 onChange={(e) => setModuleSearch(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  marginBottom: "10px",
-                  borderRadius: "8px",
-                  border: "1px solid #ccc"
-                }}
+                className="module-search-input"
               />
 
               <select
                 value={moduleCode}
                 onChange={(e) => setModuleCode(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "8px",
-                  border: "1px solid #ccc"
-                }}
+                className="module-select"
               >
                 <option value="">-- Select Module Code --</option>
                 {filteredModules.map((module, index) => (
@@ -529,7 +518,7 @@ function AdminDashboard() {
                   <td>{user.role}</td>
                   <td>
                     {user.role === "lic" 
-                      ? (user.moduleCode || <span style={{color: "#999", fontStyle: "italic"}}>Not Assigned</span>) 
+                      ? (user.moduleCode || <span className="not-assigned">Not Assigned</span>) 
                       : "-"
                     }
                   </td>
