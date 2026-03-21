@@ -333,8 +333,8 @@ function AdminDashboard() {
       return;
     }
 
-    if (publishMessage.length < 1 || publishMessage.length > 50) {
-      alert("Message must be between 1 and 50 characters");
+    if (publishMessage.length < 1 || publishMessage.length > 100) {
+      alert("Message must be between 1 and 100 characters");
       return;
     }
 
