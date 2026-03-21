@@ -13,9 +13,237 @@ function AdminDashboard() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("lic");
+  const [moduleCode, setModuleCode] = useState("");
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("all");
+  const [moduleSearch, setModuleSearch] = useState("");
+
+  // ================= MODULE CODES =================
+  const moduleCodes = [
+    "IE1030 - DCN",
+    "IT1120 - IP",
+    "IT1130 - MC",
+    "IT1140 - FC",
+    "IT1180 - EAC",
+    "SE1012 - PM",
+    "SE1032 - CS",
+    "IE1014 - EM",
+    "IT2120 - PS",
+    "SE2030 - SE",
+    "IT2011 - AIML",
+    "IT2140 - DDD",
+    "SE1022 - DM",
+    "IE1004 - CT",
+    "IE1034 - EM II",
+    "IE1024 - COA",
+    "IE1044 - DE",
+    "SE1052 - DSA",
+    "SE1042 - EAP",
+    "IT1010 - IP",
+    "IT1020 - ICS",
+    "IT1030 - MC",
+    "IT1040 - CS",
+    "IE1010 - EM",
+    "IE1020 - NF",
+    "IT1050 - OOC",
+    "IT1060 - SPM",
+    "IT1080 - EAP",
+    "IT1090 - ISDM",
+    "IT1100 - IWT",
+    "IE2012 - SNP",
+    "IE2020 - RS",
+    "IE2021 - OOP",
+    "IE2022 - ICS",
+    "IE2030 - AE",
+    "IE2031 - SAD",
+    "IE2032 - SOS",
+    "IE2041 - ISA",
+    "IE2042 - DMSS",
+    "IE2050 - OS",
+    "IE2071 - DMCI",
+    "IE2080 - DSA",
+    "IT2020 - SE",
+    "IT2030 - OOP",
+    "IT2040 - DMS",
+    "IT2050 - CN",
+    "IT2060 - OSSA",
+    "IE2010 - DE",
+    "IE2040 - AI",
+    "IE2051 - ISP",
+    "IE2052 - ANT",
+    "IE2060 - CSA",
+    "IE2061 - OSSA",
+    "IE2062 - WS",
+    "IE2070 - ES",
+    "IE2072 - FA",
+    "IE2081 - OOAD",
+    "IE2082 - DM",
+    "IE2090 - PEPIM",
+    "IT2010 - MAD",
+    "IT2070 - DSA",
+    "IT2080 - ITP",
+    "IT2090 - PS",
+    "IT2100 - ESD",
+    "IT2110 - PS",
+    "IE2004 - CN",
+    "IE2024 - PS",
+    "SE2012 - OOAD",
+    "SE2022 - DAA",
+    "SE2032 - DMS",
+    "IE3010 - NP",
+    "IE3011 - ISPM",
+    "IE3020 - DSNM",
+    "IE3021 - OBFI",
+    "IE3022 - AIA",
+    "IE3030 - WAN",
+    "IE3031 - MIS",
+    "IE3032 - NS",
+    "IE3040 - ISM",
+    "IE3041 - DMBI",
+    "IE3042 - SSS",
+    "IE3051 - EBSAD",
+    "IE3052 - ISRM",
+    "IE3112 - IOT&MS",
+    "IT3010 - NDM",
+    "IT3011 - TPSM",
+    "IT3020 - DS",
+    "IT3021 - DWBI",
+    "IT3030 - PAF",
+    "IT3031 - DS&DDA",
+    "IT3040 - ITPM",
+    "IT3050 - ESDSeminar",
+    "SE3010 - SEP&QM",
+    "SE3011 - TEM",
+    "SE3020 - DS",
+    "SE3021 - DI&CC",
+    "SE3030 - SA",
+    "SE3040 - AF",
+    "SE3061 - UED",
+    "SE3081 - DMS",
+    "IE3050 - WC",
+    "IE3060 - BMIT",
+    "IE3061 - ISM",
+    "IE3062 - DOSS",
+    "IE3070 - NTP",
+    "IE3071 - OBFII",
+    "IE3072 - ISPM",
+    "IE3080 - NSE",
+    "IE3081 - ERP",
+    "IE3082 - Crpto",
+    "IE3091 - ISSM",
+    "IE3092 - ISP",
+    "IE3102 - ESIS",
+    "IT3041 - IRWA",
+    "IT3051 - FDM",
+    "IT3060 - HCI",
+    "IT3061 - MDP&CC",
+    "IT3070 - IAS",
+    "IT3071 - MLOM",
+    "IT3080 - DS&A",
+    "IT3090 - BMIT",
+    "IT3110 - IndustryPlacement",
+    "SE3031 - 3DMA",
+    "SE3041 - DVPD",
+    "SE3050 - UEE",
+    "SE3060 - DS",
+    "SE3070 - CSSE",
+    "SE3071 - DIP",
+    "SE3080 - SPM",
+    "SE3091 - GT",
+    "IE4010 - ISM",
+    "IE4011 - BPM",
+    "IE4030 - VCCT",
+    "IE4121 - BO",
+    "IE4151 - HRIS",
+    "IE4181 - ISAC",
+    "IT4020 - MTIT",
+    "IT4021 - IOTBDA",
+    "IT4031 - VAUED",
+    "IT4040 - DA",
+    "IT4050 - IME",
+    "IT4060 - ML",
+    "IT4070 - PPW",
+    "IT4090 - CC",
+    "IT4100 - SQA",
+    "IT4130 - IUP",
+    "SE4010 - CTSE",
+    "SE4031 - GD",
+    "SE4051 - TDM",
+    "IE4020 - ESIS",
+    "IE4031 - CS",
+    "IE4040 - IAA",
+    "IE4050 - PDC",
+    "IE4060 - RIS",
+    "IE4071 - PBA",
+    "IE4080 - SDN",
+    "IE4081 - SCM",
+    "IE4131 - HCI",
+    "IE4201 - ISI&NT",
+    "IT4010 - RP",
+    "IT4011 - DASS",
+    "IT4030 - IOT",
+    "IT4041 - IISA",
+    "IT4110 - CSNA",
+    "IT4120 - KM",
+    "SE4020 - MADD",
+    "SE4030 - SSD",
+    "SE4040 - EAD",
+    "SE4041 - MADD",
+    "SE4050 - DL",
+    "SE4060 - PC",
+    "SE4061 - MPM",
+    "IE4012 - OH:TS",
+    "IE4022 - SEA",
+    "IE4062 - CFIR",
+    "IE4092 - MLCS",
+    "IE4032 - IW",
+    "IE4042 - SSE",
+    "IE4052 - HS",
+    "IE4072 - GCLC",
+    "SE2042 - OS",
+    "SE2052 - PP",
+    "SE2062 - DS",
+    "SE2072 - SE",
+    "SE2082 - HCI",
+    "IE2034 - AE",
+    "IE2044 - SMP",
+    "IE2064 - ACOA",
+    "IE2074 - CT",
+    "IE2084 - CT",
+    "IT1150 - TR",
+    "IT1160 - DM",
+    "IT1170 - DSA",
+    "SE1020 - OOP",
+    "SE3022",
+    "SE3032",
+    "SE3112",
+    "IE3014",
+    "SE3062",
+    "SE3082",
+    "IE3004",
+    "IE3014",
+    "IE3034",
+    "IE3054",
+    "IE3064",
+    "IT2130 - OSSA",
+    "IE2100 - DCWN",
+    "IE2110 - NMA",
+    "IT2160 - Prof. Skills",
+    "IE2092 - ICS",
+    "IE2102 - NP",
+    "SE3012 - IME",
+    "SE3092 - PBD",
+    "SE3102 - RM",
+    "SE3072 - IT",
+    "SE2020 - WMT",
+    "IT2150 - ITP"
+  ];
+
+  // Filter module codes based on search
+  const filteredModules = moduleCodes.filter((module) =>
+    module.toLowerCase().includes(moduleSearch.toLowerCase())
+  );
 
   // ================= FETCH =================
 
@@ -50,6 +278,11 @@ function AdminDashboard() {
       return;
     }
 
+    if (role === "lic" && !moduleCode) {
+      alert("Module code is required for LIC users");
+      return;
+    }
+
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailPattern.test(email)) {
@@ -63,12 +296,15 @@ function AdminDashboard() {
         email,
         password,
         role,
+        moduleCode: role === "lic" ? moduleCode : undefined
       });
 
       setName("");
       setEmail("");
       setPassword("");
       setRole("lic");
+      setModuleCode("");
+      setModuleSearch("");
 
       fetchUsers();
       fetchAuditLogs();
@@ -99,8 +335,7 @@ function AdminDashboard() {
 
   const handleStatusChange = async (id, currentStatus) => {
     try {
-      const newStatus =
-        currentStatus === "active" ? "suspended" : "active";
+      const newStatus = currentStatus === "active" ? "suspended" : "active";
 
       await API.put(`/auth/update-status/${id}`, {
         status: newStatus,
@@ -116,8 +351,7 @@ function AdminDashboard() {
   // ================= FILTER =================
 
   const filteredUsers = users.filter((user) => {
-    const matchesRole =
-      filterRole === "all" || user.role === filterRole;
+    const matchesRole = filterRole === "all" || user.role === filterRole;
 
     const search = searchTerm.toLowerCase();
 
@@ -133,9 +367,7 @@ function AdminDashboard() {
 
   const totalUsers = users.length;
 
-  const activeUsers = users.filter(
-    (user) => user.status === "active"
-  ).length;
+  const activeUsers = users.filter((user) => user.status === "active").length;
 
   const suspendedUsers = users.filter(
     (user) => user.status === "suspended"
@@ -156,10 +388,7 @@ function AdminDashboard() {
 
         {/* RAISE TICKET BUTTON */}
         <div style={{ marginBottom: "20px" }}>
-          <button
-            className="primary-btn"
-            onClick={() => navigate("/ticket")}
-          >
+          <button className="primary-btn" onClick={() => navigate("/ticket")}>
             Raise Ticket
           </button>
         </div>
@@ -215,6 +444,43 @@ function AdminDashboard() {
             </select>
           </div>
 
+          {/* MODULE CODE FOR LIC */}
+          {role === "lic" && (
+            <div style={{ marginTop: "15px" }}>
+              <input
+                type="text"
+                placeholder="Search module code..."
+                value={moduleSearch}
+                onChange={(e) => setModuleSearch(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  marginBottom: "10px",
+                  borderRadius: "8px",
+                  border: "1px solid #ccc"
+                }}
+              />
+
+              <select
+                value={moduleCode}
+                onChange={(e) => setModuleCode(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "8px",
+                  border: "1px solid #ccc"
+                }}
+              >
+                <option value="">-- Select Module Code --</option>
+                {filteredModules.map((module, index) => (
+                  <option key={index} value={module}>
+                    {module}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <button className="primary-btn" onClick={handleCreateUser}>
             Create User
           </button>
@@ -249,6 +515,7 @@ function AdminDashboard() {
                 <th>Name</th>
                 <th>Email</th>
                 <th>Role</th>
+                <th>Module Code</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -261,6 +528,12 @@ function AdminDashboard() {
                   <td>{user.email}</td>
                   <td>{user.role}</td>
                   <td>
+                    {user.role === "lic" 
+                      ? (user.moduleCode || <span style={{color: "#999", fontStyle: "italic"}}>Not Assigned</span>) 
+                      : "-"
+                    }
+                  </td>
+                  <td>
                     <span className={`status ${user.status}`}>
                       {user.status}
                     </span>
@@ -268,9 +541,7 @@ function AdminDashboard() {
                   <td>
                     <button
                       className="warning-btn"
-                      onClick={() =>
-                        handleStatusChange(user._id, user.status)
-                      }
+                      onClick={() => handleStatusChange(user._id, user.status)}
                     >
                       {user.status === "active" ? "Suspend" : "Activate"}
                     </button>
@@ -289,7 +560,7 @@ function AdminDashboard() {
 
               {filteredUsers.length === 0 && (
                 <tr>
-                  <td colSpan="5" className="no-data">
+                  <td colSpan="6" className="no-data">
                     No users found
                   </td>
                 </tr>
