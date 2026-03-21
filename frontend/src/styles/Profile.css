@@ -1,0 +1,152 @@
+/* ===========================
+   MODAL OVERLAY
+=========================== */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(6px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-box {
+  background: white;
+  padding: 25px;
+  border-radius: 15px;
+  width: 350px;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* ===========================
+   CLOSE BUTTON (CIRCULAR)
+=========================== */
+
+.close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: #fee2e2;
+  border: none;
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+  color: #ef4444;
+  cursor: pointer;
+  transition: 0.2s;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  background: #fecaca;
+  transform: scale(1.1);
+  color: #dc2626;
+}
+
+/* ===========================
+   PROFILE PAGE
+=========================== */
+
+.profile-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #eef4ff 0%, #f8fbff 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.profile-card {
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+  width: 350px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.profile-card h2 {
+  margin-bottom: 20px;
+  color: #1d4ed8;
+}
+
+.profile-card h3 {
+  margin-top: 20px;
+  margin-bottom: 10px;
+  color: #374151;
+  font-size: 16px;
+}
+
+/* ===========================
+   PROFILE INPUTS
+=========================== */
+
+.profile-group {
+  margin-bottom: 15px;
+}
+
+.profile-group label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 5px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.profile-group input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #d6deea;
+  background: #f9fbff;
+  font-size: 14px;
+  transition: 0.2s;
+  box-sizing: border-box;
+}
+
+.profile-group input:focus {
+  border-color: #3b82f6;
+  background: #ffffff;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.profile-group input:disabled {
+  background: #e5e7eb;
+  cursor: not-allowed;
+}
+
+/* ===========================
+   PROFILE BUTTON
+=========================== */
+
+.profile-btn {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: 0.2s;
+  font-size: 14px;
+}
+
+.profile-btn:hover {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3);
+}

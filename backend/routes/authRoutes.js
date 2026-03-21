@@ -1,25 +1,22 @@
 const express = require("express");
 const router = express.Router();
 
-// IMPORTS 
-
-// Controllers
+// ================= CONTROLLERS =================
 const {
-  updateUserRole,
   login,
   createUser,
   getAllUsers,
+  getProfile,
   updateUserStatus,
+  updateUserRole,
+  changePassword,
   deleteUser,
   getAuditLogs,
   forgotPassword,
   resetPassword
 } = require("../controllers/authController");
 
-router.post("/forgot-password", forgotPassword);
-router.post("/reset-password", resetPassword);
-
-// Middleware
+// ================= MIDDLEWARE =================
 const {
   verifyToken,
   authorizeRoles
@@ -30,6 +27,21 @@ const {
 
 // Login (no token required)
 router.post("/login", login);
+
+// Forgot Password
+router.post("/forgot-password", forgotPassword);
+
+// Reset Password
+router.post("/reset-password", resetPassword);
+
+
+// ================= AUTHENTICATED USER ROUTES =================
+
+// Get Profile (any authenticated user)
+router.get("/profile", verifyToken, getProfile);
+
+// Change Password (any authenticated user)
+router.put("/change-password", verifyToken, changePassword);
 
 
 // ================= ADMIN ONLY ROUTES =================
@@ -58,6 +70,14 @@ router.put(
   updateUserStatus
 );
 
+// Update user role
+router.put(
+  "/update-role/:id",
+  verifyToken,
+  authorizeRoles("admin"),
+  updateUserRole
+);
+
 // Delete user
 router.delete(
   "/delete-user/:id",
@@ -72,20 +92,6 @@ router.get(
   verifyToken,
   authorizeRoles("admin"),
   getAuditLogs
-);
-
-router.put(
-  "/update-role/:id",
-  verifyToken,
-  authorizeRoles("admin"),
-  updateUserRole
-);
-
-router.put(
-  "/update-role/:id",
-  verifyToken,
-  authorizeRoles("admin"),
-  updateUserRole
 );
 
 

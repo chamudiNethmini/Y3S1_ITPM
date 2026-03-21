@@ -1,26 +1,23 @@
 import { useState, useEffect } from "react";
 import API from "../services/api";
-import { useNavigate } from "react-router-dom"; // ✅ ADDED
+import { useNavigate } from "react-router-dom";
+import "../styles/AdminDashboard.css";
+import Navbar from "../components/Navbar";
 
 function AdminDashboard() {
-
-  const navigate = useNavigate(); // ✅ ADDED
-
-  
-  // STATES
-  
-
   const [users, setUsers] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
+  const navigate = useNavigate();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("lic");
 
-  
-  // FETCH USERS
-  
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterRole, setFilterRole] = useState("all");
+
+  // ================= FETCH =================
 
   const fetchUsers = async () => {
     try {
@@ -31,10 +28,6 @@ function AdminDashboard() {
     }
   };
 
-  
-  // FETCH AUDIT LOGS
-  
-
   const fetchAuditLogs = async () => {
     try {
       const res = await API.get("/auth/audit-logs");
@@ -44,11 +37,26 @@ function AdminDashboard() {
     }
   };
 
-  
-  // CREATE USER
-  
+  useEffect(() => {
+    fetchUsers();
+    fetchAuditLogs();
+  }, []);
+
+  // ================= CREATE USER =================
 
   const handleCreateUser = async () => {
+    if (!name || !email || !password) {
+      alert("All fields are required");
+      return;
+    }
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailPattern.test(email)) {
+      alert("Invalid email format");
+      return;
+    }
+
     try {
       await API.post("/auth/create-user", {
         name,
@@ -64,17 +72,20 @@ function AdminDashboard() {
 
       fetchUsers();
       fetchAuditLogs();
-
     } catch (error) {
       alert(error.response?.data?.message || "Error creating user");
     }
   };
 
-  
-  // DELETE USER
-  
+  // ================= DELETE =================
 
   const handleDelete = async (id) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this user?"
+    );
+
+    if (!confirmDelete) return;
+
     try {
       await API.delete(`/auth/delete-user/${id}`);
       fetchUsers();
@@ -84,9 +95,7 @@ function AdminDashboard() {
     }
   };
 
-  
-  // TOGGLE STATUS
-  
+  // ================= STATUS =================
 
   const handleStatusChange = async (id, currentStatus) => {
     try {
@@ -99,158 +108,226 @@ function AdminDashboard() {
 
       fetchUsers();
       fetchAuditLogs();
-
     } catch (error) {
       console.log(error);
     }
   };
 
-  
-  // LOAD ON START
-  
+  // ================= FILTER =================
 
-  useEffect(() => {
-    fetchUsers();
-    fetchAuditLogs();
-  }, []);
+  const filteredUsers = users.filter((user) => {
+    const matchesRole =
+      filterRole === "all" || user.role === filterRole;
+
+    const search = searchTerm.toLowerCase();
+
+    const matchesSearch =
+      user.name.toLowerCase().includes(search) ||
+      user.email.toLowerCase().includes(search) ||
+      user.role.toLowerCase().includes(search);
+
+    return matchesRole && matchesSearch;
+  });
+
+  // ================= STATS =================
+
+  const totalUsers = users.length;
+
+  const activeUsers = users.filter(
+    (user) => user.status === "active"
+  ).length;
+
+  const suspendedUsers = users.filter(
+    (user) => user.status === "suspended"
+  ).length;
+
+  // ================= UI =================
 
   return (
-    <div className="page">
-      <h2>Admin Dashboard</h2>
+    <>
+      <Navbar />
 
-      {/* ✅ RAISE TICKET BUTTON ADDED */}
-      <button
-        style={{ marginBottom: "20px" }}
-        onClick={() => navigate("/ticket")}
-      >
-        Raise Ticket
-      </button>
+      <div className="admin-page">
+        {/* HERO */}
+        <div className="admin-hero">
+          <h1>Admin Dashboard</h1>
+          <p>Manage users, roles and system access.</p>
+        </div>
 
-      {/* ===========================
-          CREATE USER FORM
-      ============================ */}
+        {/* RAISE TICKET BUTTON */}
+        <div style={{ marginBottom: "20px" }}>
+          <button
+            className="primary-btn"
+            onClick={() => navigate("/ticket")}
+          >
+            Raise Ticket
+          </button>
+        </div>
 
-      <div style={{ marginBottom: "30px" }}>
-        <h3>Create New User</h3>
+        {/* STATS CARDS */}
+        <div className="stats-grid">
+          <div className="stat-card stat-blue">
+            <span className="stat-title">Total Users</span>
+            <h2>{totalUsers}</h2>
+          </div>
 
-        <input
-          type="text"
-          placeholder="Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
+          <div className="stat-card stat-green">
+            <span className="stat-title">Active Users</span>
+            <h2>{activeUsers}</h2>
+          </div>
 
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+          <div className="stat-card stat-yellow">
+            <span className="stat-title">Suspended Users</span>
+            <h2>{suspendedUsers}</h2>
+          </div>
+        </div>
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        {/* CREATE USER */}
+        <div className="admin-card">
+          <h3>Create New User</h3>
 
-        <select value={role} onChange={(e) => setRole(e.target.value)}>
-          <option value="lic">LIC</option>
-          <option value="coordinator">Academic Coordinator</option>
-          <option value="admin">Admin</option>
-        </select>
+          <div className="form-grid">
+            <input
+              type="text"
+              placeholder="Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
 
-        <button onClick={handleCreateUser}>
-          Create
-        </button>
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+
+            <select value={role} onChange={(e) => setRole(e.target.value)}>
+              <option value="lic">LIC</option>
+              <option value="coordinator">Academic Coordinator</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+
+          <button className="primary-btn" onClick={handleCreateUser}>
+            Create User
+          </button>
+        </div>
+
+        {/* USERS */}
+        <div className="admin-card">
+          <div className="top-bar">
+            <input
+              type="text"
+              placeholder="Search by name, email or role..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+
+            <select
+              value={filterRole}
+              onChange={(e) => setFilterRole(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">All</option>
+              <option value="admin">Admin</option>
+              <option value="lic">LIC</option>
+              <option value="coordinator">Coordinator</option>
+            </select>
+          </div>
+
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {filteredUsers.map((user) => (
+                <tr key={user._id}>
+                  <td>{user.name}</td>
+                  <td>{user.email}</td>
+                  <td>{user.role}</td>
+                  <td>
+                    <span className={`status ${user.status}`}>
+                      {user.status}
+                    </span>
+                  </td>
+                  <td>
+                    <button
+                      className="warning-btn"
+                      onClick={() =>
+                        handleStatusChange(user._id, user.status)
+                      }
+                    >
+                      {user.status === "active" ? "Suspend" : "Activate"}
+                    </button>
+
+                    {user.role !== "admin" && (
+                      <button
+                        className="danger-btn"
+                        onClick={() => handleDelete(user._id)}
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+
+              {filteredUsers.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="no-data">
+                    No users found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* AUDIT LOGS */}
+        <div className="admin-card">
+          <h3>Audit Logs</h3>
+
+          <div className="audit-scroll">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Action</th>
+                  <th>Performed By</th>
+                  <th>Target User</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {auditLogs.map((log) => (
+                  <tr key={log._id}>
+                    <td>{log.action}</td>
+                    <td>{log.performedBy ? log.performedBy.name : "N/A"}</td>
+                    <td>{log.targetUser ? log.targetUser.name : "N/A"}</td>
+                    <td>{new Date(log.timestamp).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
-
-      {/* ===========================
-          USER TABLE
-      ============================ */}
-
-      <h3>Users</h3>
-
-      <table border="1" cellPadding="10">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {users.map((user) => (
-            <tr key={user._id}>
-              <td>{user.name}</td>
-              <td>{user.email}</td>
-              <td>{user.role}</td>
-              <td>{user.status}</td>
-              <td>
-                <button
-                  onClick={() =>
-                    handleStatusChange(user._id, user.status)
-                  }
-                >
-                  {user.status === "active"
-                    ? "Suspend"
-                    : "Activate"}
-                </button>
-
-                {user.role !== "admin" && (
-                  <button
-                    style={{ marginLeft: "10px", color: "red" }}
-                    onClick={() => handleDelete(user._id)}
-                  >
-                    Delete
-                  </button>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {/* ===========================
-          AUDIT LOG TABLE
-      ============================ */}
-
-      <h3 style={{ marginTop: "40px" }}>Audit Logs</h3>
-
-      <table border="1" cellPadding="10">
-        <thead>
-          <tr>
-            <th>Action</th>
-            <th>Performed By</th>
-            <th>Target User</th>
-            <th>Time</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {auditLogs.map((log) => (
-            <tr key={log._id}>
-              <td>{log.action}</td>
-              <td>
-                {log.performedBy
-                  ? `${log.performedBy.name} (${log.performedBy.email})`
-                  : "N/A"}
-              </td>
-              <td>
-                {log.targetUser
-                  ? `${log.targetUser.name} (${log.targetUser.email})`
-                  : "N/A"}
-              </td>
-              <td>{new Date(log.timestamp).toLocaleString()}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-    </div>
+    </>
   );
 }
 

@@ -10,6 +10,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import CoordinatorDashboard from "./pages/CoordinatorDashboard";
 import LecturerDashboard from "./pages/LecturerDashboard";
 import Ticket from "./pages/Ticket";
+import Profile from "./pages/Profile";
 
 function Home() {
   const navigate = useNavigate();
@@ -138,6 +139,8 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </Router>
   );
