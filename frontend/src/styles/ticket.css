@@ -148,3 +148,23 @@ textarea {
   background: #d4edda;
   color: #28a745;
 }
+
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #333;
+}
+
+.ticket-table td,
+.ticket-table th {
+  vertical-align: top;
+}
+
+.ticket-table td {
+  background: #fff;
+}
+
+.card h3 {
+  margin-top: 0;
+}
