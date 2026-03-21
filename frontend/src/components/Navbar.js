@@ -6,6 +6,7 @@ import "../styles/Navbar.css";
 function Navbar() {
   const navigate = useNavigate();
   const [showProfile, setShowProfile] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -16,43 +17,63 @@ function Navbar() {
   return (
     <>
       <div className="navbar">
-
         {/* LEFT */}
-        <div className="logo">
+        <div className="logo" onClick={() => navigate("/")}>
           UniMate
         </div>
 
         {/* RIGHT */}
         <div className="nav-right">
-
-          {/* 🔥 NEW 3 DOT BUTTON */}
+          {/* MENU BUTTON */}
           <button
             className="menu-btn"
-            onClick={() => navigate("/ticket")}
+            onClick={() => setShowDropdown(!showDropdown)}
           >
             ⋮
           </button>
 
-          <button
-            className="profile-btn"
-            onClick={() => setShowProfile(true)}
-          >
+          {/* DROPDOWN */}
+          {showDropdown && (
+            <div className="dropdown-menu">
+              <button
+                className="dropdown-item"
+                onClick={() => {
+                  navigate("/ticket");
+                  setShowDropdown(false);
+                }}
+              >
+                🎫 Raise Ticket
+              </button>
+              <button
+                className="dropdown-item"
+                onClick={() => {
+                  navigate("/tickets");
+                  setShowDropdown(false);
+                }}
+              >
+                📋 View Tickets
+              </button>
+            </div>
+          )}
+
+          {/* PROFILE BUTTON */}
+          <button className="profile-btn" onClick={() => setShowProfile(true)}>
             👤
           </button>
 
-          <button
-            className="logout-btn"
-            onClick={handleLogout}
-          >
+          {/* LOGOUT BUTTON */}
+          <button className="logout-btn" onClick={handleLogout}>
             Logout
           </button>
-
         </div>
       </div>
 
       {/* PROFILE MODAL */}
-      {showProfile && (
-        <ProfileModal onClose={() => setShowProfile(false)} />
+      {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
+
+      {/* CLOSE DROPDOWN OVERLAY */}
+      {showDropdown && (
+        <div className="dropdown-overlay" onClick={() => setShowDropdown(false)} />
       )}
     </>
   );
