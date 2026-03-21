@@ -9,6 +9,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import CoordinatorDashboard from "./pages/CoordinatorDashboard";
 import LecturerDashboard from "./pages/LecturerDashboard";
+import Ticket from "./pages/Ticket";
+import Profile from "./pages/Profile";
 
 function Home() {
   const navigate = useNavigate();
@@ -106,11 +108,13 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* PUBLIC ROUTES */}
         <Route path="/" element={<Home />} />
         <Route path="/admin" element={<AdminLogin />} />
         <Route path="/coordinator" element={<CoordinatorLogin />} />
         <Route path="/lecturer" element={<LecturerLogin />} />
 
+        {/* PROTECTED DASHBOARD ROUTES */}
         <Route
           path="/admin-dashboard"
           element={
@@ -137,6 +141,10 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* OTHER ROUTES */}
+        <Route path="/ticket" element={<Ticket />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </Router>
   );
