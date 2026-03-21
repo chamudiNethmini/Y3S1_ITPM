@@ -41,6 +41,10 @@ const resourceSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+       batchNo: {
+      type: String,
+      trim: true,
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
