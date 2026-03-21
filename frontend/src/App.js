@@ -9,6 +9,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import CoordinatorDashboard from "./pages/CoordinatorDashboard";
 import LecturerDashboard from "./pages/LecturerDashboard";
+import Ticket from "./pages/Ticket";
 
 function Home() {
   const navigate = useNavigate();
@@ -110,7 +111,7 @@ function App() {
         <Route path="/admin" element={<AdminLogin />} />
         <Route path="/coordinator" element={<CoordinatorLogin />} />
         <Route path="/lecturer" element={<LecturerLogin />} />
-
+        <Route path="/ticket" element={<Ticket />} /> {/* ✅ MUST HAVE */}
         <Route
           path="/admin-dashboard"
           element={

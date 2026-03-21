@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import API from "../services/api";
+import { useNavigate } from "react-router-dom"; // ✅ ADDED
 
 function AdminDashboard() {
+
+  const navigate = useNavigate(); // ✅ ADDED
 
   
   // STATES
@@ -82,8 +85,6 @@ function AdminDashboard() {
   };
 
   
-
-  
   // TOGGLE STATUS
   
 
@@ -95,8 +96,6 @@ function AdminDashboard() {
       await API.put(`/auth/update-status/${id}`, {
         status: newStatus,
       });
-
-      
 
       fetchUsers();
       fetchAuditLogs();
@@ -118,6 +117,14 @@ function AdminDashboard() {
   return (
     <div className="page">
       <h2>Admin Dashboard</h2>
+
+      {/* ✅ RAISE TICKET BUTTON ADDED */}
+      <button
+        style={{ marginBottom: "20px" }}
+        onClick={() => navigate("/ticket")}
+      >
+        Raise Ticket
+      </button>
 
       {/* ===========================
           CREATE USER FORM
