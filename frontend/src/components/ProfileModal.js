@@ -22,27 +22,37 @@ function ProfileModal({ onClose }) {
   }, []);
 
   const handleChangePassword = async () => {
-    if (!oldPassword || !newPassword) {
-      alert("Fill all fields");
-      return;
-    }
+  if (!oldPassword || !newPassword) {
+    alert("Fill all fields");
+    return;
+  }
 
-    try {
-      await API.put("/auth/change-password", {
-        oldPassword,
-        newPassword,
-      });
+  // 🔥 PASSWORD LENGTH VALIDATION
+  if (newPassword.length < 8 || newPassword.length > 12) {
+    alert("Password must be between 8 and 12 characters");
+    return;
+  }
 
-      alert("Password updated");
-      setOldPassword("");
-      setNewPassword("");
-      onClose();
+  if (newPassword === oldPassword) {
+  alert("New password must be different");
+  return;
+}
 
-    } catch (error) {
-      alert(error.response?.data?.message || "Error");
-    }
-  };
+  try {
+    await API.put("/auth/change-password", {
+      oldPassword,
+      newPassword,
+    });
 
+    alert("Password updated successfully ✅");
+
+    setOldPassword("");
+    setNewPassword("");
+
+  } catch (error) {
+    alert(error.response?.data?.message || "Error updating password");
+  }
+};
   return (
     <div className="modal-overlay">
         <button className="close-btn" onClick={onClose}>❌</button>
