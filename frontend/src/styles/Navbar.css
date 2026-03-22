@@ -1,178 +1,197 @@
-/* ================= NAVBAR ================= */
-.navbar {
+* {
+  box-sizing: border-box;
+}
+
+.top-navbar {
   width: 100%;
-  height: 60px;
-  background: linear-gradient(135deg, #2563eb, #3b82f6);
-  color: white;
+  min-height: 78px;
+  padding: 14px 26px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid #e5e7eb;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0 25px;
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.25);
-  border-radius: 0 0 15px 15px;
+  justify-content: space-between;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1000;
 }
 
-.logo {
-  font-size: 20px;
-  font-weight: bold;
-  letter-spacing: 1px;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.logo:hover {
-  opacity: 0.9;
-}
-
-.nav-right {
+.top-navbar__left {
   display: flex;
-  gap: 12px;
   align-items: center;
-  position: relative;
+  gap: 14px;
 }
 
-/* ================= MENU BUTTON ================= */
-.menu-btn {
-  background: white;
-  color: #2563eb;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 18px;
-  font-weight: bold;
-  transition: 0.2s;
-  width: 40px;
-  height: 40px;
+.brand-badge {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 20px;
+  font-weight: 800;
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.25);
 }
 
-.menu-btn:hover {
-  background: #eef4ff;
-  transform: translateY(-2px);
+.brand-text h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #111827;
+  line-height: 1.2;
 }
 
-/* ================= DROPDOWN MENU ================= */
-.dropdown-menu {
+.brand-text p {
+  margin: 2px 0 0 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.top-navbar__right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+}
+
+.admin-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.admin-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.admin-role {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.profile-trigger {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.profile-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.24);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.profile-trigger:hover .profile-avatar {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(37, 99, 235, 0.28);
+}
+
+.profile-dropdown {
   position: absolute;
-  top: 50px;
+  top: 58px;
   right: 0;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  padding: 8px;
-  min-width: 200px;
-  z-index: 200;
-  animation: slideDown 0.2s ease;
+  width: 260px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
+  padding: 12px;
+  z-index: 2000;
 }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.dropdown-user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 10px 14px 10px;
+  border-bottom: 1px solid #eef2f7;
+  margin-bottom: 8px;
+}
+
+.dropdown-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.dropdown-user-info h4 {
+  margin: 0 0 3px 0;
+  font-size: 14px;
+  color: #111827;
+}
+
+.dropdown-user-info p {
+  margin: 0;
+  font-size: 12px;
+  color: #6b7280;
+  word-break: break-word;
 }
 
 .dropdown-item {
   width: 100%;
-  padding: 12px 16px;
-  background: transparent;
+  text-align: left;
   border: none;
-  border-radius: 8px;
+  background: #f8fbff;
+  color: #1f2937;
+  padding: 11px 13px;
+  border-radius: 12px;
   cursor: pointer;
   font-size: 14px;
-  font-weight: 500;
-  color: #374151;
-  text-align: left;
-  transition: 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  font-weight: 600;
+  margin-top: 8px;
+  transition: all 0.2s ease;
 }
 
 .dropdown-item:hover {
-  background: #f3f4f6;
-}
-
-.dropdown-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 99;
-  background: transparent;
-}
-
-/* ================= PROFILE BUTTON ================= */
-.profile-btn {
-  background: white;
-  color: #2563eb;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: 0.2s;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.profile-btn:hover {
   background: #eef4ff;
-  transform: translateY(-2px);
 }
 
-/* ================= LOGOUT BUTTON ================= */
-.logout-btn {
-  background: #ef4444;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: 0.2s;
-  width: 70px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.logout-item {
+  background: #fff1f2;
+  color: #be123c;
 }
 
-.logout-btn:hover {
-  background: #dc2626;
-  transform: translateY(-2px);
+.logout-item:hover {
+  background: #ffe4e6;
 }
 
-/* ================= RESPONSIVE ================= */
 @media (max-width: 768px) {
-  .navbar {
-    padding: 0 15px;
+  .top-navbar {
+    padding: 12px 16px;
   }
 
-  .logo {
-    font-size: 18px;
+  .brand-text p {
+    display: none;
   }
 
-  .nav-right {
-    gap: 8px;
+  .admin-meta {
+    display: none;
   }
 
-  .dropdown-menu {
-    right: 0;
-    min-width: 180px;
+  .profile-dropdown {
+    width: 220px;
   }
 }
