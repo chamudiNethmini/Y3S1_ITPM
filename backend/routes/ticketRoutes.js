@@ -5,7 +5,10 @@ const { verifyToken } = require("../middleware/authMiddleware");
 
 router.post("/create", verifyToken, ticketController.createTicket);
 router.post("/create-coordinator", verifyToken, ticketController.createCoordinatorTicket);
+
 router.get("/all", verifyToken, ticketController.getTickets);
+router.get("/my", verifyToken, ticketController.getMyTickets);
+
 router.put("/reply/:id", verifyToken, ticketController.replyTicket);
 
 module.exports = router;
