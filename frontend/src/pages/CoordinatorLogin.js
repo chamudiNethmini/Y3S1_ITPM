@@ -12,30 +12,39 @@ function CoordinatorLogin() {
   const navigate = useNavigate();
 
   const handleLogin = async () => {
-    setLoading(true);
-    setErrorMsg("");
+  setLoading(true);
+  setErrorMsg("");
 
-    try {
-      const res = await loginUser(email, password);
+  try {
+    const res = await loginUser(email, password);
 
-      localStorage.setItem("token", res.token);
-      localStorage.setItem("role", res.role);
+    localStorage.setItem("token", res.token);
+    localStorage.setItem("role", res.role);
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        name: res.name,
+        email: res.email,
+        role: res.role,
+        id: res.id,
+      })
+    );
 
-      if (res.role === "admin") {
-        navigate("/admin-dashboard");
-      } else if (res.role === "coordinator") {
-        navigate("/coordinator-dashboard");
-      } else if (res.role === "lic" || res.role === "lecturer") {
-        navigate("/lecturer-dashboard");
-      } else {
-        setErrorMsg("Unknown user role");
-      }
-    } catch (error) {
-      setErrorMsg(error.response?.data?.message || "Login failed");
-    } finally {
-      setLoading(false);
+    if (res.role === "admin") {
+      navigate("/admin-dashboard");
+    } else if (res.role === "coordinator") {
+      navigate("/coordinator-dashboard");
+    } else if (res.role === "lic" || res.role === "lecturer") {
+      navigate("/lecturer-dashboard");
+    } else {
+      setErrorMsg("Unknown user role");
     }
-  };
+  } catch (error) {
+    setErrorMsg(error.response?.data?.message || "Login failed");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="login-page">
