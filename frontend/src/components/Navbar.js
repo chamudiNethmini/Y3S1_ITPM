@@ -1,80 +1,121 @@
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
-import ProfileModal from "./ProfileModal";
 import "../styles/Navbar.css";
+import ProfileModal from "./ProfileModal";
 
 function Navbar() {
   const navigate = useNavigate();
+  const dropdownRef = useRef(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
+
+  const storedUserRaw =
+    localStorage.getItem("user") || localStorage.getItem("userInfo");
+
+  let storedUser = null;
+
+  try {
+    storedUser = storedUserRaw ? JSON.parse(storedUserRaw) : null;
+  } catch (error) {
+    storedUser = null;
+  }
+
+  const fallbackRole = localStorage.getItem("role");
+
+  const user = {
+    name: storedUser?.name || "User",
+    email: storedUser?.email || "No email",
+    role: storedUser?.role || fallbackRole || "user",
+  };
+
+  const getInitials = (name) => {
+    if (!name) return "U";
+    const parts = name.trim().split(" ").filter(Boolean);
+    if (parts.length === 0) return "U";
+    if (parts.length === 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  };
+
+  const getRoleLabel = (role) => {
+    if (role === "admin") return "Administrator";
+    if (role === "coordinator") return "Coordinator";
+    if (role === "lic") return "Lecturer";
+    return "User";
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
+    localStorage.removeItem("user");
+    localStorage.removeItem("userInfo");
     navigate("/");
   };
 
+  const handleProfile = () => {
+    setMenuOpen(false);
+    setShowProfile(true);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   return (
     <>
-      <div className="navbar">
-        {/* LEFT */}
-        <div className="logo" onClick={() => navigate("/")}>
-          UniMate
+      <header className="top-navbar">
+        <div className="top-navbar__left">
+          <div className="brand-badge">U</div>
+          <div className="brand-text">
+            <h2>Unimate Dashboard</h2>
+            <p>Campus management system</p>
+          </div>
         </div>
 
-        {/* RIGHT */}
-        <div className="nav-right">
-          {/* MENU BUTTON */}
+        <div className="top-navbar__right" ref={dropdownRef}>
+          <div className="admin-meta">
+            <span className="admin-name">{user.name}</span>
+            <span className="admin-role">{getRoleLabel(user.role)}</span>
+          </div>
+
           <button
-            className="menu-btn"
-            onClick={() => setShowDropdown(!showDropdown)}
+            className="profile-trigger"
+            onClick={() => setMenuOpen(!menuOpen)}
           >
-            ⋮
+            <div className="profile-avatar">{getInitials(user.name)}</div>
           </button>
 
-          {/* DROPDOWN */}
-          {showDropdown && (
-            <div className="dropdown-menu">
-              <button
-                className="dropdown-item"
-                onClick={() => {
-                  navigate("/ticket");
-                  setShowDropdown(false);
-                }}
-              >
-                🎫 Raise Ticket
+          {menuOpen && (
+            <div className="profile-dropdown">
+              <div className="dropdown-user-info">
+                <div className="dropdown-avatar">{getInitials(user.name)}</div>
+                <div>
+                  <h4>{user.name}</h4>
+                  <p>{user.email}</p>
+                </div>
+              </div>
+
+              <button className="dropdown-item" onClick={handleProfile}>
+                Profile
               </button>
-              <button
-                className="dropdown-item"
-                onClick={() => {
-                  navigate("/tickets");
-                  setShowDropdown(false);
-                }}
-              >
-                📋 View Tickets
+
+              <button className="dropdown-item logout-item" onClick={handleLogout}>
+                Logout
               </button>
             </div>
           )}
-
-          {/* PROFILE BUTTON */}
-          <button className="profile-btn" onClick={() => setShowProfile(true)}>
-            👤
-          </button>
-
-          {/* LOGOUT BUTTON */}
-          <button className="logout-btn" onClick={handleLogout}>
-            Logout
-          </button>
         </div>
-      </div>
+      </header>
 
-      {/* PROFILE MODAL */}
       {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
-
-      {/* CLOSE DROPDOWN OVERLAY */}
-      {showDropdown && (
-        <div className="dropdown-overlay" onClick={() => setShowDropdown(false)} />
-      )}
     </>
   );
 }
