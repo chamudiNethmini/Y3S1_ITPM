@@ -19,6 +19,9 @@ function AdminDashboard() {
   const [filterRole, setFilterRole] = useState("all");
   const [moduleSearch, setModuleSearch] = useState("");
 
+  // PUBLISH TIMETABLE STATE
+  const [publishMessage, setPublishMessage] = useState("");
+
   // ================= MODULE CODES =================
   const moduleCodes = [
     "IE1030 - DCN",
@@ -290,6 +293,12 @@ function AdminDashboard() {
       return;
     }
 
+    // PASSWORD VALIDATION
+    if (password.length < 8 || password.length > 12) {
+      alert("Password must be between 8 and 12 characters");
+      return;
+    }
+
     try {
       await API.post("/auth/create-user", {
         name,
@@ -298,6 +307,8 @@ function AdminDashboard() {
         role,
         moduleCode: role === "lic" ? moduleCode : undefined
       });
+
+      alert("User created successfully");
 
       setName("");
       setEmail("");
@@ -308,8 +319,36 @@ function AdminDashboard() {
 
       fetchUsers();
       fetchAuditLogs();
+
     } catch (error) {
       alert(error.response?.data?.message || "Error creating user");
+    }
+  };
+
+  // ================= PUBLISH TIMETABLE =================
+
+  const handlePublishTimetable = async () => {
+    if (!publishMessage.trim()) {
+      alert("Please enter a message");
+      return;
+    }
+
+    if (publishMessage.length < 1 || publishMessage.length > 100) {
+      alert("Message must be between 1 and 100 characters");
+      return;
+    }
+
+    try {
+      await API.post("/timetable/publish", {
+        message: publishMessage
+      });
+
+      alert("Timetable published successfully ✅");
+      setPublishMessage("");
+      fetchAuditLogs();
+
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to publish timetable");
     }
   };
 
@@ -432,7 +471,7 @@ function AdminDashboard() {
 
             <input
               type="password"
-              placeholder="Password"
+              placeholder="Password (8-12 characters)"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -558,6 +597,33 @@ function AdminDashboard() {
           </table>
         </div>
 
+        {/* PUBLISH TIMETABLE */}
+        <div className="admin-card">
+          <h3>Publish Final Timetable</h3>
+
+          <div className="publish-section">
+            <input
+              type="text"
+              placeholder="Enter message (1-100 characters)..."
+              value={publishMessage}
+              onChange={(e) => setPublishMessage(e.target.value)}
+              maxLength={100}
+              className="publish-input"
+            />
+
+            <span className="char-count">
+              {publishMessage.length}/100
+            </span>
+
+            <button 
+              className="primary-btn publish-btn" 
+              onClick={handlePublishTimetable}
+            >
+              Publish
+            </button>
+          </div>
+        </div>
+
         {/* AUDIT LOGS */}
         <div className="admin-card">
           <h3>Audit Logs</h3>
@@ -590,5 +656,5 @@ function AdminDashboard() {
     </>
   );
 }
-
+//
 export default AdminDashboard;

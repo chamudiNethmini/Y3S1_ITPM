@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../services/api";
 import Navbar from "../components/Navbar";
 import "../styles/LecturerDashboard.css";
 
 function LecturerDashboard() {
+  const navigate = useNavigate();
+
   const [timetable, setTimetable] = useState([]);
   const [lecturers, setLecturers] = useState([]);
   const [assignments, setAssignments] = useState({});
@@ -35,6 +38,11 @@ function LecturerDashboard() {
     "E101", "E106", "G1205", "F1401 & F1402", "F605", "F406"
   ];
 
+  const [selectedHall, setSelectedHall] = useState("");
+  const [selectedDay, setSelectedDay] = useState("");
+  const [selectedTime, setSelectedTime] = useState("");
+  const [hallStatus, setHallStatus] = useState("");
+
   // ================= FETCH TIMETABLE =================
   const fetchTimetable = async () => {
     try {
@@ -52,7 +60,7 @@ function LecturerDashboard() {
   const fetchLecturers = async () => {
     try {
       const res = await API.get("/auth/all-users");
-      const licUsers = res.data.filter(user => user.role === "lic");
+      const licUsers = res.data.filter((user) => user.role === "lic");
       setLecturers(licUsers);
     } catch (error) {
       console.log(error);
@@ -66,7 +74,7 @@ function LecturerDashboard() {
 
   // ================= CALCULATE REMAINING HOURS =================
   const calculateRemainingHours = (lecturerId) => {
-    const lecturer = lecturers.find(lec => lec._id === lecturerId);
+    const lecturer = lecturers.find((lec) => lec._id === lecturerId);
     if (!lecturer || !lecturer.designation) return 0;
 
     const maxHours = workloadHours[lecturer.designation] || 0;
@@ -76,7 +84,7 @@ function LecturerDashboard() {
 
   // ================= HANDLE ASSIGN CHANGE =================
   const handleAssignChange = (id, lecturerId) => {
-    setAssignments(prev => ({
+    setAssignments((prev) => ({
       ...prev,
       [id]: lecturerId
     }));
@@ -104,9 +112,24 @@ function LecturerDashboard() {
   // ================= CHECK HALL AVAILABILITY =================
   const checkHallAvailability = (hall, day, time) => {
     const clashes = timetable.filter(
-      item => item.hall === hall && item.day === day && item.time === time
+      (item) => item.hall === hall && item.day === day && item.time === time
     );
     return clashes.length === 0;
+  };
+
+  const handleCheckAvailability = () => {
+    if (!selectedHall || !selectedDay || !selectedTime) {
+      alert("Please select hall, day, and time");
+      return;
+    }
+
+    const isAvailable = checkHallAvailability(selectedHall, selectedDay, selectedTime);
+
+    if (isAvailable) {
+      setHallStatus(`✅ ${selectedHall} is available on ${selectedDay} at ${selectedTime}`);
+    } else {
+      setHallStatus(`❌ ${selectedHall} is already occupied on ${selectedDay} at ${selectedTime}`);
+    }
   };
 
   return (
@@ -117,7 +140,7 @@ function LecturerDashboard() {
         {/* HERO */}
         <div className="lecturer-hero">
           <h1>LIC Dashboard</h1>
-          <p>Assign lecturers to timetable modules and manage workload.</p>
+          <p>Assign lecturers to timetable modules, manage workload, and raise support tickets.</p>
         </div>
 
         {/* STATS CARDS */}
@@ -138,130 +161,218 @@ function LecturerDashboard() {
           </div>
         </div>
 
+        {/* TICKET SECTION */}
+        <div className="lecturer-card">
+          <div className="section-header">
+            <div>
+              <h3>Raise a Ticket</h3>
+              <p>Create a support request and send it to admin or coordinator.</p>
+            </div>
+          </div>
+
+          <div className="form-grid two-cols">
+            <div className="form-group">
+              <label>Support Type</label>
+              <input
+                type="text"
+                className="lecturer-input"
+                value="Ticket Request"
+                readOnly
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Destination</label>
+              <input
+                type="text"
+                className="lecturer-input"
+                value="Admin / Coordinator"
+                readOnly
+              />
+            </div>
+          </div>
+
+          <div className="action-row">
+            <button
+              className="primary-btn"
+              onClick={() => navigate("/ticket")}
+            >
+              Raise Ticket
+            </button>
+          </div>
+        </div>
+
+        {/* SUPPORT INFO */}
+        <div className="lecturer-card">
+          <div className="section-header">
+            <div>
+              <h3>Support Information</h3>
+              <p>Use the ticket system to submit issues and check replies.</p>
+            </div>
+          </div>
+
+          <div className="table-wrapper">
+            <table className="lic-table">
+              <thead>
+                <tr>
+                  <th>Feature</th>
+                  <th>Description</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Create Ticket</td>
+                  <td>Send a new request to admin or coordinator</td>
+                  <td>
+                    <span className="status-badge resolved">Available</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Track My Tickets</td>
+                  <td>View previously submitted tickets and current status</td>
+                  <td>
+                    <span className="status-badge resolved">Available</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>View Replies</td>
+                  <td>Check responses sent by admin or coordinator</td>
+                  <td>
+                    <span className="status-badge resolved">Available</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         {/* LECTURER WORKLOAD TABLE */}
         <div className="lecturer-card">
           <h3>Lecturer Workload Overview</h3>
 
-          <table className="lic-table">
-            <thead>
-              <tr>
-                <th>Lecturer Name</th>
-                <th>Module Code</th>
-                <th>Designation</th>
-                <th>Max Hours</th>
-                <th>Assigned Hours</th>
-                <th>Remaining Hours</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {lecturers.length > 0 ? (
-                lecturers.map((lec) => {
-                  const maxHours = workloadHours[lec.designation] || 0;
-                  const assignedHours = lec.assignedHours || 0;
-                  const remainingHours = maxHours - assignedHours;
-
-                  return (
-                    <tr key={lec._id}>
-                      <td>{lec.name}</td>
-                      <td>{lec.moduleCode || "-"}</td>
-                      <td>{lec.designation || "Not Set"}</td>
-                      <td>{maxHours} hrs</td>
-                      <td>{assignedHours} hrs</td>
-                      <td>
-                        <span className={remainingHours > 0 ? "hours-available" : "hours-full"}>
-                          {remainingHours} hrs
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
+          <div className="table-wrapper">
+            <table className="lic-table">
+              <thead>
                 <tr>
-                  <td colSpan="6">No lecturers found</td>
+                  <th>Lecturer Name</th>
+                  <th>Module Code</th>
+                  <th>Designation</th>
+                  <th>Max Hours</th>
+                  <th>Assigned Hours</th>
+                  <th>Remaining Hours</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody>
+                {lecturers.length > 0 ? (
+                  lecturers.map((lec) => {
+                    const maxHours = workloadHours[lec.designation] || 0;
+                    const assignedHours = lec.assignedHours || 0;
+                    const remainingHours = maxHours - assignedHours;
+
+                    return (
+                      <tr key={lec._id}>
+                        <td>{lec.name}</td>
+                        <td>{lec.moduleCode || "-"}</td>
+                        <td>{lec.designation || "Not Set"}</td>
+                        <td>{maxHours} hrs</td>
+                        <td>{assignedHours} hrs</td>
+                        <td>
+                          <span className={remainingHours > 0 ? "hours-available" : "hours-full"}>
+                            {remainingHours} hrs
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan="6">No lecturers found</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* ASSIGN LECTURERS TABLE */}
         <div className="lecturer-card">
           <h3>Assign Lecturers to Timetable</h3>
 
-          <table className="lic-table">
-            <thead>
-              <tr>
-                <th>Module Code</th>
-                <th>Subject</th>
-                <th>Day</th>
-                <th>Time</th>
-                <th>Hall</th>
-                <th>Assign Lecturer</th>
-                <th>Remaining Hours</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {loading ? (
+          <div className="table-wrapper">
+            <table className="lic-table">
+              <thead>
                 <tr>
-                  <td colSpan="8">Loading...</td>
+                  <th>Module Code</th>
+                  <th>Subject</th>
+                  <th>Day</th>
+                  <th>Time</th>
+                  <th>Hall</th>
+                  <th>Assign Lecturer</th>
+                  <th>Remaining Hours</th>
+                  <th>Action</th>
                 </tr>
-              ) : timetable.length > 0 ? (
-                timetable.map((item) => (
-                  <tr key={item._id}>
-                    <td>{item.moduleCode}</td>
-                    <td>{item.subject}</td>
-                    <td>{item.day}</td>
-                    <td>{item.time}</td>
-                    <td>{item.hall}</td>
+              </thead>
 
-                    <td>
-                      <select
-                        value={assignments[item._id] || ""}
-                        onChange={(e) =>
-                          handleAssignChange(item._id, e.target.value)
-                        }
-                        className="lecturer-select"
-                      >
-                        <option value="">Select Lecturer</option>
-
-                        {lecturers.map((lec) => (
-                          <option key={lec._id} value={lec._id}>
-                            {lec.name} - {lec.moduleCode || "No Module"}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-
-                    <td>
-                      {assignments[item._id] ? (
-                        <span className="remaining-hours">
-                          {calculateRemainingHours(assignments[item._id])} hrs
-                        </span>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-
-                    <td>
-                      <button
-                        className="primary-btn"
-                        onClick={() => handleSave(item._id)}
-                      >
-                        Assign
-                      </button>
-                    </td>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan="8">Loading...</td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="8">No timetable found</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                ) : timetable.length > 0 ? (
+                  timetable.map((item) => (
+                    <tr key={item._id}>
+                      <td>{item.moduleCode}</td>
+                      <td>{item.subject}</td>
+                      <td>{item.day}</td>
+                      <td>{item.time}</td>
+                      <td>{item.hall}</td>
+
+                      <td>
+                        <select
+                          value={assignments[item._id] || ""}
+                          onChange={(e) => handleAssignChange(item._id, e.target.value)}
+                          className="lecturer-select"
+                        >
+                          <option value="">Select Lecturer</option>
+
+                          {lecturers.map((lec) => (
+                            <option key={lec._id} value={lec._id}>
+                              {lec.name} - {lec.moduleCode || "No Module"}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+
+                      <td>
+                        {assignments[item._id] ? (
+                          <span className="remaining-hours">
+                            {calculateRemainingHours(assignments[item._id])} hrs
+                          </span>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
+
+                      <td>
+                        <button
+                          className="primary-btn"
+                          onClick={() => handleSave(item._id)}
+                        >
+                          Assign
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="8">No timetable found</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* HALL AVAILABILITY CHECKER */}
@@ -269,7 +380,11 @@ function LecturerDashboard() {
           <h3>Check Hall Availability</h3>
 
           <div className="hall-checker">
-            <select className="hall-select">
+            <select
+              className="hall-select"
+              value={selectedHall}
+              onChange={(e) => setSelectedHall(e.target.value)}
+            >
               <option value="">Select Hall</option>
               {locations.map((hall, index) => (
                 <option key={index} value={hall}>
@@ -278,7 +393,11 @@ function LecturerDashboard() {
               ))}
             </select>
 
-            <select className="hall-select">
+            <select
+              className="hall-select"
+              value={selectedDay}
+              onChange={(e) => setSelectedDay(e.target.value)}
+            >
               <option value="">Select Day</option>
               <option value="Monday">Monday</option>
               <option value="Tuesday">Tuesday</option>
@@ -287,7 +406,11 @@ function LecturerDashboard() {
               <option value="Friday">Friday</option>
             </select>
 
-            <select className="hall-select">
+            <select
+              className="hall-select"
+              value={selectedTime}
+              onChange={(e) => setSelectedTime(e.target.value)}
+            >
               <option value="">Select Time</option>
               <option value="8:00 AM - 10:00 AM">8:00 AM - 10:00 AM</option>
               <option value="10:00 AM - 12:00 PM">10:00 AM - 12:00 PM</option>
@@ -295,8 +418,16 @@ function LecturerDashboard() {
               <option value="3:00 PM - 5:00 PM">3:00 PM - 5:00 PM</option>
             </select>
 
-            <button className="primary-btn">Check Availability</button>
+            <button className="primary-btn" onClick={handleCheckAvailability}>
+              Check Availability
+            </button>
           </div>
+
+          {hallStatus && (
+            <div style={{ marginTop: "14px", fontWeight: "600" }}>
+              {hallStatus}
+            </div>
+          )}
         </div>
       </div>
     </>

@@ -7,28 +7,27 @@ function Ticket() {
   const navigate = useNavigate();
 
   const [tickets, setTickets] = useState([]);
-  const [replyTexts, setReplyTexts] = useState({});
+  const [receiverRole, setReceiverRole] = useState("admin");
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // ================= FETCH =================
-  const fetchTickets = async () => {
+  const fetchMyTickets = async () => {
     try {
-      const res = await API.get("/tickets/all");
+      const res = await API.get("/tickets/my");
       setTickets(res.data);
     } catch (error) {
-      console.log(error);
+      console.log("LOAD MY TICKETS ERROR:", error.response?.data || error.message);
+      alert(error.response?.data?.message || "Failed to load tickets");
     }
   };
 
   useEffect(() => {
-    fetchTickets();
+    fetchMyTickets();
   }, []);
 
-  // ================= SCROLL DETECTION =================
   useEffect(() => {
     const handleScroll = () => setShowScrollTop(window.scrollY > 200);
     window.addEventListener("scroll", handleScroll);
@@ -39,34 +38,11 @@ function Ticket() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // ================= REPLY =================
-  const handleReplyChange = (id, value) => {
-    if (value.length <= 1000) {
-      setReplyTexts((prev) => ({ ...prev, [id]: value }));
-    }
-  };
-
-  const handleReply = async (id) => {
-    const reply = replyTexts[id]?.trim();
-    if (!reply) {
-      alert("Reply is required");
-      return;
-    }
-    try {
-      await API.put(`/tickets/reply/${id}`, { reply });
-      setReplyTexts((prev) => ({ ...prev, [id]: "" }));
-      fetchTickets();
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  // ================= CREATE =================
   const handleCreateTicket = async () => {
     const trimmedSubject = subject.trim();
     const trimmedMessage = message.trim();
 
-    if (!trimmedSubject || !trimmedMessage) {
+    if (!trimmedSubject || !trimmedMessage || !receiverRole) {
       alert("All fields are required");
       return;
     }
@@ -80,39 +56,58 @@ function Ticket() {
       await API.post("/tickets/create", {
         subject: trimmedSubject,
         message: trimmedMessage,
+        receiverRole,
       });
+
       setSubject("");
       setMessage("");
-      fetchTickets();
+      setReceiverRole("admin");
+      fetchMyTickets();
     } catch (error) {
-      console.log(error);
+      console.log("CREATE TICKET ERROR:", error.response?.data || error.message);
+      alert(error.response?.data?.message || "Failed to create ticket");
     }
   };
 
-  // ================= FILTER =================
-  const isValidStatus = (status) => /^[a-zA-Z]+$/.test(status);
-
   const filteredTickets = tickets
-    .filter((t) => statusFilter === "all" || (isValidStatus(t.status) && t.status === statusFilter))
+    .filter((t) => statusFilter === "all" || t.status === statusFilter)
     .filter((t) =>
       searchTerm.trim() === "" ||
-      (t.sender?.name || "").toLowerCase().includes(searchTerm.toLowerCase())
+      t.subject.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
   return (
-    <div className="page" style={{ padding: "20px", backgroundColor: "#f4f6f9", minHeight: "100vh", fontFamily: "Arial, sans-serif" }}>
-      
-      {/* HEADER */}
+    <div
+      className="page"
+      style={{
+        padding: "20px",
+        backgroundColor: "#f4f6f9",
+        minHeight: "100vh",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-        <h2 style={{ margin: 0, color: "#333" }}>🎫 Ticket Dashboard</h2>
-        <button onClick={() => navigate("/admin")} className="btn-secondary">
+        <h2 style={{ margin: 0, color: "#333" }}>🎫 Raise Ticket</h2>
+        <button onClick={() => navigate("/lecturer-dashboard")} className="btn-secondary">
           Back
         </button>
       </div>
 
-      {/* CREATE CARD */}
       <div className="card" style={{ borderRadius: "12px", boxShadow: "0 4px 15px rgba(0,0,0,0.1)" }}>
         <h3 style={{ marginBottom: "15px", color: "#333" }}>Create Ticket</h3>
+
+        <div className="form-group">
+          <label>Send To</label>
+          <select
+            value={receiverRole}
+            onChange={(e) => setReceiverRole(e.target.value)}
+            style={{ padding: "10px", width: "100%" }}
+          >
+            <option value="admin">Admin</option>
+            <option value="coordinator">Coordinator</option>
+          </select>
+        </div>
+
         <div className="form-group">
           <input
             type="text"
@@ -122,6 +117,7 @@ function Ticket() {
             style={{ fontSize: "14px" }}
           />
         </div>
+
         <div className="form-group">
           <textarea
             placeholder="Write your message..."
@@ -131,22 +127,18 @@ function Ticket() {
           />
           <small style={{ color: "#666" }}>{message.length}/1000</small>
         </div>
+
         <button onClick={handleCreateTicket} className="btn-primary">
           Submit Ticket
         </button>
       </div>
 
-      {/* FILTER & SEARCH */}
       <div className="filter-bar" style={{ marginBottom: "20px", display: "flex", flexDirection: "column", gap: "10px" }}>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
           <label style={{ fontWeight: "600" }}>Status:</label>
           <select
             value={statusFilter}
-            onChange={(e) => {
-              if (e.target.value === "all" || /^[a-zA-Z]+$/.test(e.target.value)) {
-                setStatusFilter(e.target.value);
-              }
-            }}
+            onChange={(e) => setStatusFilter(e.target.value)}
             style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid #ccc", fontSize: "14px", height: "38px" }}
           >
             <option value="all">All</option>
@@ -154,62 +146,55 @@ function Ticket() {
             <option value="replied">Replied</option>
           </select>
         </div>
+
         <input
           type="text"
-          placeholder="Search by sender name..."
+          placeholder="Search by subject..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid #ccc", fontSize: "14px", height: "38px" }}
         />
       </div>
 
-      {/* TABLE */}
       <div className="table-container" style={{ borderRadius: "8px", overflow: "hidden", boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
         <table className="ticket-table" style={{ width: "100%", borderCollapse: "collapse", backgroundColor: "#fff" }}>
           <thead>
             <tr style={{ backgroundColor: "#007bff", color: "#fff" }}>
               <th>ID</th>
+              <th>Send To</th>
               <th>Subject</th>
               <th>Message</th>
-              <th>Sender</th>
               <th>Status</th>
               <th>Reply</th>
-              <th>Action</th>
+              <th>Replied By</th>
             </tr>
           </thead>
           <tbody>
-            {filteredTickets.map((ticket, idx) => (
-              <tr key={ticket._id} style={{ backgroundColor: idx % 2 === 0 ? "#f9f9f9" : "#fff", transition: "background-color 0.2s" }}>
-                <td>{ticket.ticketId}</td>
-                <td>{ticket.subject}</td>
-                <td className="message-cell">{ticket.message}</td>
-                <td>{ticket.sender?.name}</td>
-                <td>
-                  <span className={`status ${ticket.status.toLowerCase()}`}>{ticket.status}</span>
-                </td>
-                <td>{ticket.reply}</td>
-                <td>
-                  {ticket.status === "pending" && (
-                    <div className="reply-box">
-                      <input
-                        type="text"
-                        placeholder="Reply..."
-                        value={replyTexts[ticket._id] || ""}
-                        onChange={(e) => handleReplyChange(ticket._id, e.target.value)}
-                      />
-                      <button onClick={() => handleReply(ticket._id)} className="btn-primary small">
-                        Send
-                      </button>
-                    </div>
-                  )}
+            {filteredTickets.length > 0 ? (
+              filteredTickets.map((ticket, idx) => (
+                <tr key={ticket._id} style={{ backgroundColor: idx % 2 === 0 ? "#f9f9f9" : "#fff" }}>
+                  <td>{ticket.ticketId}</td>
+                  <td>{ticket.receiverRoles?.[0]}</td>
+                  <td>{ticket.subject}</td>
+                  <td className="message-cell">{ticket.message}</td>
+                  <td>
+                    <span className={`status ${ticket.status?.toLowerCase()}`}>{ticket.status}</span>
+                  </td>
+                  <td>{ticket.reply || "No reply yet"}</td>
+                  <td>{ticket.repliedBy?.name || "-"}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="7" style={{ textAlign: "center", padding: "20px" }}>
+                  No tickets found
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* SCROLL TO TOP */}
       {showScrollTop && (
         <button
           onClick={scrollToTop}
