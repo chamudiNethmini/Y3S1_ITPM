@@ -185,7 +185,10 @@ function ResourceManagement() {
 
     const payload = {
       resourceType: formData.resourceType,
-      name: formData.name.trim(),
+      name:
+        formData.resourceType === "batch"
+          ? formData.batchNo.trim()
+          : formData.name.trim(),
       batchNo: formData.batchNo.trim(),
       code: formData.code.trim(),
       department: formData.department.trim(),
