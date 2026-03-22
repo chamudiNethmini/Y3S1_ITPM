@@ -7,12 +7,53 @@ function Ticket() {
   const navigate = useNavigate();
 
   const [tickets, setTickets] = useState([]);
-  const [receiverRole, setReceiverRole] = useState("admin");
+  const [receiverRole, setReceiverRole] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  const currentUser =
+    JSON.parse(localStorage.getItem("user")) ||
+    JSON.parse(localStorage.getItem("userInfo")) ||
+    {};
+
+  const currentRole = currentUser.role || localStorage.getItem("role") || "";
+
+  const getBackPath = () => {
+    if (currentRole === "admin") return "/admin-dashboard";
+    if (currentRole === "coordinator") return "/coordinator-dashboard";
+    return "/lecturer-dashboard";
+  };
+
+  const getReceiverOptions = () => {
+    if (currentRole === "admin") {
+      return [
+        { value: "coordinator", label: "Coordinator" },
+        { value: "lic", label: "Lecturer" },
+      ];
+    }
+
+    if (currentRole === "coordinator") {
+      return [
+        { value: "admin", label: "Admin" },
+        { value: "lic", label: "Lecturer" },
+      ];
+    }
+
+    return [
+      { value: "admin", label: "Admin" },
+      { value: "coordinator", label: "Coordinator" },
+    ];
+  };
+
+  useEffect(() => {
+    const options = getReceiverOptions();
+    if (options.length > 0) {
+      setReceiverRole(options[0].value);
+    }
+  }, [currentRole]);
 
   const fetchMyTickets = async () => {
     try {
@@ -53,16 +94,26 @@ function Ticket() {
     }
 
     try {
-      await API.post("/tickets/create", {
-        subject: trimmedSubject,
-        message: trimmedMessage,
-        receiverRole,
-      });
+      if (currentRole === "lic") {
+        await API.post("/tickets/create", {
+          subject: trimmedSubject,
+          message: trimmedMessage,
+          receiverRole,
+        });
+      } else {
+        await API.post("/tickets/create-coordinator", {
+          subject: trimmedSubject,
+          message: trimmedMessage,
+          role: receiverRole,
+        });
+      }
 
       setSubject("");
       setMessage("");
-      setReceiverRole("admin");
+      const options = getReceiverOptions();
+      setReceiverRole(options[0]?.value || "");
       fetchMyTickets();
+      alert("Ticket created successfully");
     } catch (error) {
       console.log("CREATE TICKET ERROR:", error.response?.data || error.message);
       alert(error.response?.data?.message || "Failed to create ticket");
@@ -71,9 +122,10 @@ function Ticket() {
 
   const filteredTickets = tickets
     .filter((t) => statusFilter === "all" || t.status === statusFilter)
-    .filter((t) =>
-      searchTerm.trim() === "" ||
-      t.subject.toLowerCase().includes(searchTerm.toLowerCase())
+    .filter(
+      (t) =>
+        searchTerm.trim() === "" ||
+        t.subject.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
   return (
@@ -88,7 +140,7 @@ function Ticket() {
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
         <h2 style={{ margin: 0, color: "#333" }}>🎫 Raise Ticket</h2>
-        <button onClick={() => navigate("/lecturer-dashboard")} className="btn-secondary">
+        <button onClick={() => navigate(getBackPath())} className="btn-secondary">
           Back
         </button>
       </div>
@@ -103,8 +155,11 @@ function Ticket() {
             onChange={(e) => setReceiverRole(e.target.value)}
             style={{ padding: "10px", width: "100%" }}
           >
-            <option value="admin">Admin</option>
-            <option value="coordinator">Coordinator</option>
+            {getReceiverOptions().map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
         </div>
 
