@@ -11,6 +11,8 @@ import CoordinatorDashboard from "./pages/CoordinatorDashboard";
 import LecturerDashboard from "./pages/LecturerDashboard";
 import Ticket from "./pages/Ticket";
 import Profile from "./pages/Profile";
+import FAQ from "./pages/FAQ";
+import PrivacyPolicy from "./pages/Privacy";
 
 function Home() {
   const navigate = useNavigate();
@@ -113,6 +115,8 @@ function App() {
         <Route path="/admin" element={<AdminLogin />} />
         <Route path="/coordinator" element={<CoordinatorLogin />} />
         <Route path="/lecturer" element={<LecturerLogin />} />
+        <Route path="/faq" element={<FAQ />} />
+        <Route path="/privacy" element={< PrivacyPolicy/>} />
 
         {/* PROTECTED DASHBOARD ROUTES */}
         <Route
