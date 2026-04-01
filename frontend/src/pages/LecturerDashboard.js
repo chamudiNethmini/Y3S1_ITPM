@@ -9,33 +9,88 @@ function LecturerDashboard() {
 
   const [timetable, setTimetable] = useState([]);
   const [lecturers, setLecturers] = useState([]);
+  const [filteredLecturers, setFilteredLecturers] = useState([]); // 🔥 NEW
+  const [searchLecturer, setSearchLecturer] = useState(""); // 🔥 NEW
   const [assignments, setAssignments] = useState({});
   const [loading, setLoading] = useState(false);
 
   // WORKLOAD HOURS
   const workloadHours = {
-    "Instructor": 22,
+    Instructor: 22,
     "Assistant Lecturer": 16,
-    "Lecturer": 15,
+    Lecturer: 15,
     "Senior Lecturer": 12,
     "Senior Lecturer (Higher Grade)": 12,
     "Assistant Professor": 12,
     "Associate Professor": 10,
-    "Professor": 8
+    Professor: 8,
   };
 
   // LOCATIONS
   const locations = [
-    "A304", "A503", "A504 Smart Classroom", "A505", "A506", "A507",
-    "B501", "B502", "F301", "F302", "F303", "F502", "F503",
-    "F1306", "F1307", "F1308", "G601", "G602", "G603", "G604",
-    "G605", "G606", "G1101", "G1102", "G1103", "G1104", "G1105",
-    "G1106", "G1401", "G1402", "B401", "B402", "B403", "A405",
-    "A412", "A410", "A411", "F304", "F305", "F1301+F1302",
-    "F1303+F1304", "F1305", "G1301", "G1302", "G1303", "G1304",
-    "G1305 Linux Lab", "G1306", "CyberSecLab", "Emblab", "DClab",
-    "Robotics Lab", "MMlab", "F602", "E102", "F501", "E105",
-    "E101", "E106", "G1205", "F1401 & F1402", "F605", "F406"
+    "A304",
+    "A503",
+    "A504 Smart Classroom",
+    "A505",
+    "A506",
+    "A507",
+    "B501",
+    "B502",
+    "F301",
+    "F302",
+    "F303",
+    "F502",
+    "F503",
+    "F1306",
+    "F1307",
+    "F1308",
+    "G601",
+    "G602",
+    "G603",
+    "G604",
+    "G605",
+    "G606",
+    "G1101",
+    "G1102",
+    "G1103",
+    "G1104",
+    "G1105",
+    "G1106",
+    "G1401",
+    "G1402",
+    "B401",
+    "B402",
+    "B403",
+    "A405",
+    "A412",
+    "A410",
+    "A411",
+    "F304",
+    "F305",
+    "F1301+F1302",
+    "F1303+F1304",
+    "F1305",
+    "G1301",
+    "G1302",
+    "G1303",
+    "G1304",
+    "G1305 Linux Lab",
+    "G1306",
+    "CyberSecLab",
+    "Emblab",
+    "DClab",
+    "Robotics Lab",
+    "MMlab",
+    "F602",
+    "E102",
+    "F501",
+    "E105",
+    "E101",
+    "E106",
+    "G1205",
+    "F1401 & F1402",
+    "F605",
+    "F406",
   ];
 
   const [selectedHall, setSelectedHall] = useState("");
@@ -62,6 +117,7 @@ function LecturerDashboard() {
       const res = await API.get("/auth/all-users");
       const licUsers = res.data.filter((user) => user.role === "lic");
       setLecturers(licUsers);
+      setFilteredLecturers(licUsers); // 🔥 UPDATED
     } catch (error) {
       console.log(error);
     }
@@ -71,6 +127,16 @@ function LecturerDashboard() {
     fetchTimetable();
     fetchLecturers();
   }, []);
+
+  // ================= SEARCH LECTURER =================
+  const handleLecturerSearch = (value) => {
+    // 🔥 NEW
+    setSearchLecturer(value);
+    const filtered = lecturers.filter((lec) =>
+      lec.name.toLowerCase().includes(value.toLowerCase()),
+    );
+    setFilteredLecturers(filtered);
+  };
 
   // ================= CALCULATE REMAINING HOURS =================
   const calculateRemainingHours = (lecturerId) => {
@@ -86,7 +152,7 @@ function LecturerDashboard() {
   const handleAssignChange = (id, lecturerId) => {
     setAssignments((prev) => ({
       ...prev,
-      [id]: lecturerId
+      [id]: lecturerId,
     }));
   };
 
@@ -96,6 +162,12 @@ function LecturerDashboard() {
 
     if (!lecturerId) {
       alert("Please select a lecturer");
+      return;
+    }
+
+    // 🔥 NEW - Remaining hours check
+    if (calculateRemainingHours(lecturerId) <= 0) {
+      alert("This lecturer has no remaining hours");
       return;
     }
 
@@ -112,7 +184,7 @@ function LecturerDashboard() {
   // ================= CHECK HALL AVAILABILITY =================
   const checkHallAvailability = (hall, day, time) => {
     const clashes = timetable.filter(
-      (item) => item.hall === hall && item.day === day && item.time === time
+      (item) => item.hall === hall && item.day === day && item.time === time,
     );
     return clashes.length === 0;
   };
@@ -123,12 +195,20 @@ function LecturerDashboard() {
       return;
     }
 
-    const isAvailable = checkHallAvailability(selectedHall, selectedDay, selectedTime);
+    const isAvailable = checkHallAvailability(
+      selectedHall,
+      selectedDay,
+      selectedTime,
+    );
 
     if (isAvailable) {
-      setHallStatus(`✅ ${selectedHall} is available on ${selectedDay} at ${selectedTime}`);
+      setHallStatus(
+        `✅ ${selectedHall} is available on ${selectedDay} at ${selectedTime}`,
+      );
     } else {
-      setHallStatus(`❌ ${selectedHall} is already occupied on ${selectedDay} at ${selectedTime}`);
+      setHallStatus(
+        `❌ ${selectedHall} is already occupied on ${selectedDay} at ${selectedTime}`,
+      );
     }
   };
 
@@ -140,7 +220,10 @@ function LecturerDashboard() {
         {/* HERO */}
         <div className="lecturer-hero">
           <h1>LIC Dashboard</h1>
-          <p>Assign lecturers to timetable modules, manage workload, and raise support tickets.</p>
+          <p>
+            Assign lecturers to timetable modules, manage workload, and raise
+            support tickets.
+          </p>
         </div>
 
         {/* STATS CARDS */}
@@ -166,7 +249,9 @@ function LecturerDashboard() {
           <div className="section-header">
             <div>
               <h3>Raise a Ticket</h3>
-              <p>Create a support request and send it to admin or coordinator.</p>
+              <p>
+                Create a support request and send it to admin or coordinator.
+              </p>
             </div>
           </div>
 
@@ -193,10 +278,7 @@ function LecturerDashboard() {
           </div>
 
           <div className="action-row">
-            <button
-              className="primary-btn"
-              onClick={() => navigate("/ticket")}
-            >
+            <button className="primary-btn" onClick={() => navigate("/ticket")}>
               Raise Ticket
             </button>
           </div>
@@ -279,7 +361,13 @@ function LecturerDashboard() {
                         <td>{maxHours} hrs</td>
                         <td>{assignedHours} hrs</td>
                         <td>
-                          <span className={remainingHours > 0 ? "hours-available" : "hours-full"}>
+                          <span
+                            className={
+                              remainingHours > 0
+                                ? "hours-available"
+                                : "hours-full"
+                            }
+                          >
                             {remainingHours} hrs
                           </span>
                         </td>
@@ -299,6 +387,16 @@ function LecturerDashboard() {
         {/* ASSIGN LECTURERS TABLE */}
         <div className="lecturer-card">
           <h3>Assign Lecturers to Timetable</h3>
+
+          {/* 🔥 UPDATED SEARCH BAR */}
+          <input
+            type="text"
+            placeholder="Search Lecturer..."
+            className="lecturer-input"
+            value={searchLecturer}
+            onChange={(e) => handleLecturerSearch(e.target.value)}
+            style={{ marginBottom: "15px", width: "300px" }}
+          />
 
           <div className="table-wrapper">
             <table className="lic-table">
@@ -332,14 +430,16 @@ function LecturerDashboard() {
                       <td>
                         <select
                           value={assignments[item._id] || ""}
-                          onChange={(e) => handleAssignChange(item._id, e.target.value)}
+                          onChange={(e) =>
+                            handleAssignChange(item._id, e.target.value)
+                          }
                           className="lecturer-select"
                         >
                           <option value="">Select Lecturer</option>
-
-                          {lecturers.map((lec) => (
+                          {/* 🔥 filteredLecturers use karanne */}
+                          {filteredLecturers.map((lec) => (
                             <option key={lec._id} value={lec._id}>
-                              {lec.name} - {lec.moduleCode || "No Module"}
+                              {lec.name}
                             </option>
                           ))}
                         </select>
