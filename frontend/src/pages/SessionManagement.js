@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import API from "../services/api";
 import "../styles/SessionManagement.css";
 
-function SessionManagementPage() {
+function SessionManagement() {
+  const navigate = useNavigate();
+
   const [lecturers, setLecturers] = useState([]);
   const [entries, setEntries] = useState([]);
   const [editingId, setEditingId] = useState(null);
@@ -32,7 +34,7 @@ function SessionManagementPage() {
   const fetchLecturers = async () => {
     try {
       const res = await API.get("/timetable-entries/lecturers");
-      setLecturers(res.data);
+      setLecturers(res.data || []);
     } catch (error) {
       console.error(error);
     }
@@ -43,7 +45,7 @@ function SessionManagementPage() {
       const res = await API.get("/timetable-entries", {
         params: { status: "draft" },
       });
-      setEntries(res.data);
+      setEntries(res.data || []);
     } catch (error) {
       console.error(error);
     }
@@ -113,9 +115,6 @@ function SessionManagementPage() {
     }
 
     if (!form.hall.trim()) {
-      newErrors.hall = "Hall is required";
-      isValid = false;
-    } else if (form.hall.trim().length < 1) {
       newErrors.hall = "Hall is required";
       isValid = false;
     } else if (!hallRegex.test(form.hall.trim())) {
@@ -199,6 +198,94 @@ function SessionManagementPage() {
     setEditingId(null);
   };
 
+  const getLecturerNameById = (id) => {
+    const lecturer = lecturers.find((item) => item._id === id);
+    return lecturer?.name || "N/A";
+  };
+
+  const findAllClashes = (allEntries, currentPayload, currentEditingId = null) => {
+    const currentStart = toMinutes(currentPayload.startTime);
+    const currentEnd = toMinutes(currentPayload.endTime);
+
+    if (currentStart === null || currentEnd === null) {
+      return [];
+    }
+
+    const clashes = [];
+
+    for (const entry of allEntries) {
+      if (currentEditingId && entry._id === currentEditingId) {
+        continue;
+      }
+
+      if (entry.day !== currentPayload.day) {
+        continue;
+      }
+
+      const entryStart = toMinutes(entry.startTime);
+      const entryEnd = toMinutes(entry.endTime);
+
+      if (entryStart === null || entryEnd === null) {
+        continue;
+      }
+
+      const timeOverlap = currentStart < entryEnd && entryStart < currentEnd;
+
+      if (!timeOverlap) {
+        continue;
+      }
+
+      const sameHall =
+        entry.hall?.trim().toLowerCase() ===
+        currentPayload.hall?.trim().toLowerCase();
+
+      const entryLecturerId =
+        typeof entry.lecturer === "object" ? entry.lecturer?._id : entry.lecturer;
+
+      const sameLecturer = entryLecturerId === currentPayload.lecturer;
+
+      if (sameHall || sameLecturer) {
+        let clashType = "";
+
+        if (sameHall && sameLecturer) {
+          clashType = "Hall and Lecturer Clash";
+        } else if (sameHall) {
+          clashType = "Hall Clash";
+        } else if (sameLecturer) {
+          clashType = "Lecturer Clash";
+        }
+
+        clashes.push({
+          id: `${currentPayload.day}-${currentPayload.startTime}-${currentPayload.endTime}-${entry._id}`,
+          clashType,
+          newSession: {
+            module: currentPayload.module,
+            lecturer: getLecturerNameById(currentPayload.lecturer),
+            batchGroup: currentPayload.batchGroup,
+            hall: currentPayload.hall,
+            day: currentPayload.day,
+            startTime: currentPayload.startTime,
+            endTime: currentPayload.endTime,
+          },
+          existingSession: {
+            module: entry.module,
+            lecturer:
+              typeof entry.lecturer === "object"
+                ? entry.lecturer?.name || "N/A"
+                : "N/A",
+            batchGroup: entry.batchGroup,
+            hall: entry.hall,
+            day: entry.day,
+            startTime: entry.startTime,
+            endTime: entry.endTime,
+          },
+        });
+      }
+    }
+
+    return clashes;
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) {
       return;
@@ -212,6 +299,11 @@ function SessionManagementPage() {
         hall: form.hall.trim(),
       };
 
+      const allEntriesRes = await API.get("/timetable-entries");
+      const allEntries = allEntriesRes.data || [];
+
+      const clashList = findAllClashes(allEntries, payload, editingId);
+
       if (editingId) {
         await API.put(`/timetable-entries/${editingId}`, payload);
         alert("Session updated successfully");
@@ -222,6 +314,14 @@ function SessionManagementPage() {
 
       resetForm();
       fetchEntries();
+
+      if (clashList.length > 0) {
+        navigate("/notifications", {
+          state: {
+            newClashes: clashList,
+          },
+        });
+      }
     } catch (error) {
       alert(error.response?.data?.message || "Failed to save session");
     }
@@ -268,6 +368,22 @@ function SessionManagementPage() {
       fetchEntries();
     } catch (error) {
       alert(error.response?.data?.message || "Failed to publish timetable");
+    }
+  };
+
+  const handleViewNotifications = async () => {
+    try {
+      const res = await API.get("/timetable-entries");
+      const allEntries = Array.isArray(res.data) ? res.data : [];
+      const clashList = findAllClashes(allEntries, form, editingId);
+      navigate("/notifications", {
+        state: {
+          newClashes: clashList,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to load clashes:", error);
+      navigate("/notifications");
     }
   };
 
@@ -396,9 +512,12 @@ function SessionManagementPage() {
             Clear
           </button>
 
-          <Link className="resource-link" to="/timetable-management">
-            <button className="resource-secondary-btn">View Timetable</button>
-          </Link>
+          <button
+            className="resource-secondary-btn"
+            onClick={handleViewNotifications}
+          >
+            Notifications
+          </button>
         </div>
       </div>
 
@@ -490,4 +609,4 @@ function SessionManagementPage() {
   );
 }
 
-export default SessionManagementPage;
+export default SessionManagement;
