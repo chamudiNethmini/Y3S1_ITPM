@@ -1,0 +1,109 @@
+/* Container Layout */
+.resource-section {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Back Button/Icon Styling */
+.back-navigation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #555;
+  transition: all 0.2s ease;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.back-navigation:hover {
+  color: #007bff; /* Change to your primary theme color */
+  background-color: #e9ecef;
+}
+
+/* Card Styling */
+.resource-card {
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid #e0e0e0;
+}
+
+.resource-topbar h2 {
+  margin: 0;
+  color: #333;
+  font-size: 1.8rem;
+}
+
+.resource-topbar p {
+  color: #666;
+  margin-top: 5px;
+}
+
+/* Clash-Specific Styling (Red Theme) */
+.clash-detected-card {
+  border: 2px solid #ff4d4d !important;
+  background-color: #fffafa;
+}
+
+.clash-title {
+  color: #d32f2f;
+  font-weight: bold;
+}
+
+/* Session Stack & Cards */
+.session-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.session-card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 15px;
+  transition: transform 0.1s ease;
+}
+
+.session-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.session-module {
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 5px;
+}
+
+.session-info {
+  font-size: 0.95rem;
+  color: #444;
+  line-height: 1.6;
+}
+
+/* Empty/Loading States */
+.resource-empty {
+  text-align: center;
+  padding: 40px;
+  color: #888;
+  font-style: italic;
+}
+
+/* Responsive Grid for Sessions */
+.session-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .session-grid {
+    grid-template-columns: 1fr;
+  }
+}

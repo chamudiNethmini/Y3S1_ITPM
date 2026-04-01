@@ -14,7 +14,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import CoordinatorDashboard from "./pages/CoordinatorDashboard";
 import LecturerDashboard from "./pages/LecturerDashboard";
-
+import SessionManagement from './pages/SessionManagement';
 import Ticket from "./pages/Ticket";
 import Profile from "./pages/Profile";
 import FAQ from "./pages/FAQ";
@@ -124,7 +124,7 @@ function App() {
         <Route path="/lecturer" element={<LecturerLogin />} />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
-
+        <Route path="/session-management" element={<SessionManagement />} />
         {/* PROTECTED DASHBOARD ROUTES */}
         <Route
           path="/admin-dashboard"
