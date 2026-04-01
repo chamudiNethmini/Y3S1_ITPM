@@ -7,9 +7,481 @@ import {
 } from "../services/resourceService";
 import "../styles/ResourceManagement.css";
 
+const departmentOptions = ["FOC", "FOE", "BM", "FHS"];
+
+const lecturersByTitle = {
+  "Prof.": [
+    "Nuwan Kodagoda",
+    "Pradeep Abeygunawardhana",
+    "Koliya Pulasinghe",
+    "Mahesha Kapurubandara",
+    "Samantha Thelijjagoda",
+    "Anuradha Karunasena",
+    "Dasuni Nawinna",
+    "Anuradha Jayakody",
+    "Samantha Rajapakshe",
+    "Dilshan De Silva",
+  ],
+  "Dr.": [
+    "Dharshana Kasthurirathne",
+    "Malitha Wijesundara",
+    "Kalpani Manathunga",
+    "Jayantha Amararachchi",
+    "Jeewanee Bamunusinghe",
+    "Harinda Sahadeva Fernando",
+    "Bhagya Nathali Silva",
+    "Sanvitha Kasturiarachchi",
+    "Nimal Ratnayake",
+    "Lakmini Abeywardhana",
+  ],
+  "Mr.": [
+    "Jagath Wickramarathne",
+    "Amila Senarathne",
+    "Kavinga Yapa Abeywardene",
+    "Aruna Ishara Gamage",
+    "Nelum Chathuranga Amarasena",
+    "Jeewaka Perera",
+    "Paramabadu Wickramasuriyage Sarath",
+    "Sanjeeva Perera",
+    "Kanishka Yapa",
+    "Vishan Danura Jayasinghearachchi",
+  ],
+  "Ms.": [
+    "Uthpala Samarakoon",
+    "Sanjeevi Chandrasiri",
+    "Shashika Lokuliyana",
+    "Hansika Mahaadikara",
+    "Lokesha Prasadini",
+    "Suranjini Silva",
+    "Thilini Jayalath",
+    "Jenny Kishara",
+    "Chathurangika Kahandawarachchi",
+    "Gaya Thamali Dassanayake",
+  ],
+};
+
+const hallLocations = [
+  "A304",
+  "A503",
+  "A504 Smart Classroom",
+  "A505",
+  "A506",
+  "A507",
+  "B501",
+  "B502",
+  "F301",
+  "F302",
+  "F303",
+  "F502",
+  "F503",
+  "F1306",
+  "F1307",
+  "F1308",
+  "G601",
+  "G602",
+  "G603",
+  "G604",
+  "G605",
+  "G606",
+  "G1101",
+  "G1102",
+  "G1103",
+  "G1104",
+  "G1105",
+  "G1106",
+  "G1401",
+  "G1402",
+  "B401",
+  "B402",
+  "B403",
+  "A405",
+  "A412",
+  "A410",
+  "A411",
+  "F304",
+  "F305",
+  "F1301+F1302",
+  "F1303+F1304",
+  "F1305",
+  "G1301",
+  "G1302",
+  "G1303",
+  "G1304",
+  "G1305 Linux Lab",
+  "G1306",
+  "CyberSecLab",
+  "Emblab",
+  "DClab",
+  "Robotics Lab",
+  "MMlab",
+  "F602",
+  "E102",
+  "F501",
+  "E105",
+  "E101",
+  "E106",
+  "G1205",
+  "F1401 & F1402",
+  "F605",
+  "F406",
+];
+
+const moduleOptions = [
+  { code: "IE1030", name: "DCN" },
+  { code: "IT1120", name: "IP" },
+  { code: "IT1130", name: "MC" },
+  { code: "IT1140", name: "FC" },
+  { code: "IT1180", name: "EAC" },
+  { code: "SE1012", name: "PM" },
+  { code: "SE1032", name: "CS" },
+  { code: "IE1014", name: "EM" },
+  { code: "IT2120", name: "PS" },
+  { code: "SE2030", name: "SE" },
+  { code: "IT2011", name: "AIML" },
+  { code: "IT2140", name: "DDD" },
+  { code: "SE1022", name: "DM" },
+  { code: "IE1004", name: "CT" },
+  { code: "IE1034", name: "EM II" },
+  { code: "IE1024", name: "COA" },
+  { code: "IE1044", name: "DE" },
+  { code: "SE1052", name: "DSA" },
+  { code: "SE1042", name: "EAP" },
+  { code: "IT1010", name: "IP" },
+  { code: "IT1020", name: "ICS" },
+  { code: "IT1030", name: "MC" },
+  { code: "IT1040", name: "CS" },
+  { code: "IE1010", name: "EM" },
+  { code: "IE1020", name: "NF" },
+  { code: "IT1050", name: "OOC" },
+  { code: "IT1060", name: "SPM" },
+  { code: "IT1080", name: "EAP" },
+  { code: "IT1090", name: "ISDM" },
+  { code: "IT1100", name: "IWT" },
+  { code: "IE2012", name: "SNP" },
+  { code: "IE2020", name: "RS" },
+  { code: "IE2021", name: "OOP" },
+  { code: "IE2022", name: "ICS" },
+  { code: "IE2030", name: "AE" },
+  { code: "IE2031", name: "SAD" },
+  { code: "IE2032", name: "SOS" },
+  { code: "IE2041", name: "ISA" },
+  { code: "IE2042", name: "DMSS" },
+  { code: "IE2050", name: "OS" },
+  { code: "IE2071", name: "DMCI" },
+  { code: "IE2080", name: "DSA" },
+  { code: "IT2020", name: "SE" },
+  { code: "IT2030", name: "OOP" },
+  { code: "IT2040", name: "DMS" },
+  { code: "IT2050", name: "CN" },
+  { code: "IT2060", name: "OSSA" },
+  { code: "IE2010", name: "DE" },
+  { code: "IE2040", name: "AI" },
+  { code: "IE2051", name: "ISP" },
+  { code: "IE2052", name: "ANT" },
+  { code: "IE2060", name: "CSA" },
+  { code: "IE2061", name: "OSSA" },
+  { code: "IE2062", name: "WS" },
+  { code: "IE2070", name: "ES" },
+  { code: "IE2072", name: "FA" },
+  { code: "IE2081", name: "OOAD" },
+  { code: "IE2082", name: "DM" },
+  { code: "IE2090", name: "PEPIM" },
+  { code: "IT2010", name: "MAD" },
+  { code: "IT2070", name: "DSA" },
+  { code: "IT2080", name: "ITP" },
+  { code: "IT2090", name: "PS" },
+  { code: "IT2100", name: "ESD" },
+  { code: "IT2110", name: "PS" },
+  { code: "IE2004", name: "CN" },
+  { code: "IE2024", name: "PS" },
+  { code: "SE2012", name: "OOAD" },
+  { code: "SE2022", name: "DAA" },
+  { code: "SE2032", name: "DMS" },
+  { code: "IE3010", name: "NP" },
+  { code: "IE3011", name: "ISPM" },
+  { code: "IE3020", name: "DSNM" },
+  { code: "IE3021", name: "OBFI" },
+  { code: "IE3022", name: "AIA" },
+  { code: "IE3030", name: "WAN" },
+  { code: "IE3031", name: "MIS" },
+  { code: "IE3032", name: "NS" },
+  { code: "IE3040", name: "ISM" },
+  { code: "IE3041", name: "DMBI" },
+  { code: "IE3042", name: "SSS" },
+  { code: "IE3051", name: "EBSAD" },
+  { code: "IE3052", name: "ISRM" },
+  { code: "IE3112", name: "IOT&MS" },
+  { code: "IT3010", name: "NDM" },
+  { code: "IT3011", name: "TPSM" },
+  { code: "IT3020", name: "DS" },
+  { code: "IT3021", name: "DWBI" },
+  { code: "IT3030", name: "PAF" },
+  { code: "IT3031", name: "DS&DDA" },
+  { code: "IT3040", name: "ITPM" },
+  { code: "IT3050", name: "ESDSeminar" },
+  { code: "SE3010", name: "SEP&QM" },
+  { code: "SE3011", name: "TEM" },
+  { code: "SE3020", name: "DS" },
+  { code: "SE3021", name: "DI&CC" },
+  { code: "SE3030", name: "SA" },
+  { code: "SE3040", name: "AF" },
+  { code: "SE3061", name: "UED" },
+  { code: "SE3081", name: "DMS" },
+  { code: "IE3050", name: "WC" },
+  { code: "IE3060", name: "BMIT" },
+  { code: "IE3061", name: "ISM" },
+  { code: "IE3062", name: "DOSS" },
+  { code: "IE3070", name: "NTP" },
+  { code: "IE3071", name: "OBFII" },
+  { code: "IE3072", name: "ISPM" },
+  { code: "IE3080", name: "NSE" },
+  { code: "IE3081", name: "ERP" },
+  { code: "IE3082", name: "Crpto" },
+  { code: "IE3091", name: "ISSM" },
+  { code: "IE3092", name: "ISP" },
+  { code: "IE3102", name: "ESIS" },
+  { code: "IT3041", name: "IRWA" },
+  { code: "IT3051", name: "FDM" },
+  { code: "IT3060", name: "HCI" },
+  { code: "IT3061", name: "MDP&CC" },
+  { code: "IT3070", name: "IAS" },
+  { code: "IT3071", name: "MLOM" },
+  { code: "IT3080", name: "DS&A" },
+  { code: "IT3090", name: "BMIT" },
+  { code: "IT3110", name: "IndustryPlacement" },
+  { code: "SE3031", name: "3DMA" },
+  { code: "SE3041", name: "DVPD" },
+  { code: "SE3050", name: "UEE" },
+  { code: "SE3060", name: "DS" },
+  { code: "SE3070", name: "CSSE" },
+  { code: "SE3071", name: "DIP" },
+  { code: "SE3080", name: "SPM" },
+  { code: "SE3091", name: "GT" },
+  { code: "IE4010", name: "ISM" },
+  { code: "IE4011", name: "BPM" },
+  { code: "IE4030", name: "VCCT" },
+  { code: "IE4121", name: "BO" },
+  { code: "IE4151", name: "HRIS" },
+  { code: "IE4181", name: "ISAC" },
+  { code: "IT4020", name: "MTIT" },
+  { code: "IT4021", name: "IOTBDA" },
+  { code: "IT4031", name: "VAUED" },
+  { code: "IT4040", name: "DA" },
+  { code: "IT4050", name: "IME" },
+  { code: "IT4060", name: "ML" },
+  { code: "IT4070", name: "PPW" },
+  { code: "IT4090", name: "CC" },
+  { code: "IT4100", name: "SQA" },
+  { code: "IT4130", name: "IUP" },
+  { code: "SE4010", name: "CTSE" },
+  { code: "SE4031", name: "GD" },
+  { code: "SE4051", name: "TDM" },
+  { code: "IE4020", name: "ESIS" },
+  { code: "IE4031", name: "CS" },
+  { code: "IE4040", name: "IAA" },
+  { code: "IE4050", name: "PDC" },
+  { code: "IE4060", name: "RIS" },
+  { code: "IE4071", name: "PBA" },
+  { code: "IE4080", name: "SDN" },
+  { code: "IE4081", name: "SCM" },
+  { code: "IE4131", name: "HCI" },
+  { code: "IE4201", name: "ISI&NT" },
+  { code: "IT4010", name: "RP" },
+  { code: "IT4011", name: "DASS" },
+  { code: "IT4030", name: "IOT" },
+  { code: "IT4041", name: "IISA" },
+  { code: "IT4110", name: "CSNA" },
+  { code: "IT4120", name: "KM" },
+  { code: "SE4020", name: "MADD" },
+  { code: "SE4030", name: "SSD" },
+  { code: "SE4040", name: "EAD" },
+  { code: "SE4041", name: "MADD" },
+  { code: "SE4050", name: "DL" },
+  { code: "SE4060", name: "PC" },
+  { code: "SE4061", name: "MPM" },
+  { code: "IE4012", name: "OH:TS" },
+  { code: "IE4022", name: "SEA" },
+  { code: "IE4062", name: "CFIR" },
+  { code: "IE4092", name: "MLCS" },
+  { code: "IE4032", name: "IW" },
+  { code: "IE4042", name: "SSE" },
+  { code: "IE4052", name: "HS" },
+  { code: "IE4072", name: "GCLC" },
+  { code: "SE2042", name: "OS" },
+  { code: "SE2052", name: "PP" },
+  { code: "SE2062", name: "DS" },
+  { code: "SE2072", name: "SE" },
+  { code: "SE2082", name: "HCI" },
+  { code: "IE2034", name: "AE" },
+  { code: "IE2044", name: "SMP" },
+  { code: "IE2064", name: "ACOA" },
+  { code: "IE2074", name: "CT" },
+  { code: "IE2084", name: "CT" },
+  { code: "IT1150", name: "TR" },
+  { code: "IT1160", name: "DM" },
+  { code: "IT1170", name: "DSA" },
+  { code: "SE1020", name: "OOP" },
+  { code: "SE3022", name: "" },
+  { code: "SE3032", name: "" },
+  { code: "SE3112", name: "" },
+  { code: "IE3014", name: "" },
+  { code: "SE3062", name: "" },
+  { code: "SE3082", name: "" },
+  { code: "IE3004", name: "" },
+  { code: "IE3034", name: "" },
+  { code: "IE3054", name: "" },
+  { code: "IE3064", name: "" },
+  { code: "IT2130", name: "OSSA" },
+  { code: "IE2100", name: "DCWN" },
+  { code: "IE2110", name: "NMA" },
+  { code: "IT2160", name: "Prof. Skills" },
+  { code: "IE2092", name: "ICS" },
+  { code: "IE2102", name: "NP" },
+  { code: "SE3012", name: "IME" },
+  { code: "SE3092", name: "PBD" },
+  { code: "SE3102", name: "RM" },
+  { code: "SE3072", name: "IT" },
+  { code: "SE2020", name: "WMT" },
+  { code: "IT2150", name: "ITP" },
+  { code: "Other", name: "" },
+];
+
+const batchOptions = [
+  "Y1.S2.WE.IT.01",
+  "Y1.S2.WE.IT.02",
+  "Y1.S2.WE.IT.03",
+  "Y1.S2.WD.IT.01",
+  "Y1.S2.WD.IT.02",
+  "Y1.S2.WD.IT.03",
+  "Y1.S2.WD.IT.04",
+  "Y1.S2.WD.IT.05",
+  "Y1.S2.WD.IT.06",
+  "Y1.S2.WD.IT.07",
+  "Y1.S2.WD.IT.08",
+  "Y1.S2.WD.IT.09",
+  "Y1.S2.WD.IT.10",
+  "Y1.S2.WD.IT.11",
+  "Y1.S2.WD.IT.12",
+  "Y1.S2.WD.IT.13",
+  "Y1.S2.WD.IT.14",
+  "Y1.S2.WD.IT.15",
+  "Y1.S2.WD.IT.16",
+  "Y1.S2.WD.IT.17",
+  "Y1.S2.WD.IT.01.QU",
+  "Y2.S1.WD.IT.01",
+  "Y2.S2.WE.IT.01",
+  "Y2.S2.WE.IT.02",
+  "Y2.S2.WE.IT.03",
+  "Y2.S2.WE.IT.04",
+  "Y2.S2.WE.CS.01",
+  "Y2.S2.WE.ISE.01",
+  "Y2.S2.WE.CSNE.01",
+  "Y2.S2.WE.SE.01",
+  "Y2.S2.WE.IM.01",
+  "Y2.S2.WE.DS.01",
+  "Y2.S2.WD.IT.01",
+  "Y2.S2.WD.IT.02",
+  "Y2.S2.WD.IT.03",
+  "Y2.S2.WD.IT.04",
+  "Y2.S2.WD.IT.05",
+  "Y2.S2.WD.IT.06",
+  "Y2.S2.WD.IT.07",
+  "Y2.S2.WD.DS.01",
+  "Y2.S2.WD.CS.01",
+  "Y2.S2.WD.CS.02",
+  "Y2.S2.WD.ISE.01",
+  "Y2.S2.WD.CSNE.01",
+  "Y2.S2.WD.IM.01",
+  "Y2.S2.WD.SE.01",
+  "Y2.S2.WD.SE.02",
+  "Y3.S1.WE.IT.01",
+  "Y3.S1.WE.IT.02",
+  "Y3.S1.WE.IT.03",
+  "Y3.S1.WE.IT.04",
+  "Y3.S1.WE.IT.05",
+  "Y3.S1.WE.CS.01",
+  "Y3.S1.WE.ISE.01",
+  "Y3.S1.WE.CSNE.01",
+  "Y3.S1.WE.SE.01",
+  "Y3.S1.WE.SE.02",
+  "Y3.S1.WE.IM.01",
+  "Y3.S1.WE.DS.01",
+  "Y3.S1.WE.DS.02",
+  "Y3.S1.WD.IT.01",
+  "Y3.S1.WD.IT.02",
+  "Y3.S1.WD.IT.03",
+  "Y3.S1.WD.CSNE.01",
+  "Y3.S1.WD.CS.01",
+  "Y3.S1.WD.ISE.01",
+  "Y3.S1.WD.SE.01",
+  "Y3.S1.WD.IM.01",
+  "Y3.S1.WD.DS.01",
+  "Y3.S2.WE.IT.01",
+  "Y3.S2.WE.IT.02",
+  "Y3.S2.WE.IT.03",
+  "Y3.S2.WE.IT.04",
+  "Y3.S2.WE.IT.05",
+  "Y3.S2.WE.CSNE.01",
+  "Y3.S2.WE.CS.01",
+  "Y3.S2.WE.ISE.01",
+  "Y3.S2.WE.SE.01",
+  "Y3.S2.WE.SE.02",
+  "Y3.S2.WE.SE.03",
+  "Y3.S2.WE.SE.04",
+  "Y3.S2.WE.DS.01",
+  "Y3.S2.WE.DS.02",
+  "Y3.S2.WE.IM.01",
+  "Y3.S2.WD.IT.01",
+  "Y3.S2.WD.SE.01",
+  "Y3.S2.WD.DS.01",
+  "Y3.S2.WD.IM.01",
+  "Y3.S2.WD.CS.01",
+  "Y3.S2.WD.ISE.01",
+  "Y3.S2.WD.CSNE.01",
+  "Y4.S1.WE.IT.01",
+  "Y4.S1.WE.IT.02",
+  "Y4.S1.WE.IT.03",
+  "Y4.S1.WE.CS.01",
+  "Y4.S1.WE.ISE.01",
+  "Y4.S1.WE.IM.01",
+  "Y4.S1.WE.DS.01",
+  "Y4.S1.WE.SE.01",
+  "Y4.S1.WD.IT.01",
+  "Y4.S1.WD.CS.01",
+  "Y4.S1.WD.ISE.01",
+  "Y4.S1.WD.IM.01",
+  "Y4.S1.WD.DS.01",
+  "Y4.S1.WD.SE.01",
+  "Y4.S2.WE.IT.01",
+  "Y4.S2.WE.IT.02",
+  "Y4.S2.WE.IT.03",
+  "Y4.S2.WE.IT.04",
+  "Y4.S2.WE.IT.05",
+  "Y4.S2.WE.IT.06",
+  "Y4.S2.WE.IT.07",
+  "Y4.S2.WE.IT.08",
+  "Y4.S2.WE.CSNE.01",
+  "Y4.S2.WE.CS.01",
+  "Y4.S2.WE.ISE.01",
+  "Y4.S2.WE.IM.01",
+  "Y4.S2.WE.DS.01",
+  "Y4.S2.WE.DS.02",
+  "Y4.S2.WE.SE.01",
+  "Y4.S2.WE.SE.02",
+  "Y4.S2.WE.SE.03",
+  "Y4.S2.WD.IT.02",
+  "Y4.S2.WD.IM.01",
+  "Y4.S2.WD.DS.01",
+  "Y4.S2.WD.SE.01",
+  "Y4.S2.WD.CSNE.01",
+  "Y4.S2.WD.CS.01",
+  "Y4.S2.WD.ISE.01",
+];
+
 function ResourceManagement() {
   const initialForm = {
     resourceType: "lecturer",
+    lecturerTitle: "",
     name: "",
     batchNo: "",
     code: "",
@@ -26,6 +498,7 @@ function ResourceManagement() {
   const [editingId, setEditingId] = useState(null);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const formCardRef = useRef(null);
 
@@ -45,6 +518,22 @@ function ResourceManagement() {
     fetchResources();
   }, [filterType]);
 
+  const totalLecturers = resources.filter(
+    (resource) => resource.resourceType === "lecturer"
+  ).length;
+
+  const totalHalls = resources.filter(
+    (resource) => resource.resourceType === "hall"
+  ).length;
+
+  const totalModules = resources.filter(
+    (resource) => resource.resourceType === "module"
+  ).length;
+
+  const totalBatches = resources.filter(
+    (resource) => resource.resourceType === "batch"
+  ).length;
+
   const getColumnCount = () => {
     if (filterType === "lecturer") return 5;
     if (filterType === "hall") return 6;
@@ -61,10 +550,12 @@ function ResourceManagement() {
     }
 
     if (formData.resourceType === "lecturer") {
+      if (!formData.lecturerTitle.trim()) {
+        newErrors.lecturerTitle = "Lecturer title is required";
+      }
       if (!formData.name.trim()) {
         newErrors.name = "Lecturer name is required";
       }
-
       if (!formData.department.trim()) {
         newErrors.department = "Department is required";
       }
@@ -73,14 +564,10 @@ function ResourceManagement() {
     if (formData.resourceType === "hall") {
       if (!formData.name.trim()) {
         newErrors.name = "Location is required";
-      } else if (!/^[A-Z]/.test(formData.name.trim())) {
-        newErrors.name = "Location must start with a capital letter";
       }
-
       if (!formData.department.trim()) {
         newErrors.department = "Department is required";
       }
-
       if (formData.capacity === "") {
         newErrors.capacity = "Capacity is required";
       } else if (Number(formData.capacity) <= 0) {
@@ -89,18 +576,12 @@ function ResourceManagement() {
     }
 
     if (formData.resourceType === "module") {
+      if (!formData.code.trim()) {
+        newErrors.code = "Module code is required";
+      }
       if (!formData.name.trim()) {
         newErrors.name = "Module name is required";
       }
-
-      if (!formData.code.trim()) {
-        newErrors.code = "Module code is required";
-      } else if (!/^[A-Z]{2}/.test(formData.code.trim())) {
-        newErrors.code = "Module code must start with 2 capital letters";
-      } else if (formData.code.trim().length > 20) {
-        newErrors.code = "Code must be less than 20 characters";
-      }
-
       if (!formData.department.trim()) {
         newErrors.department = "Department is required";
       }
@@ -109,26 +590,20 @@ function ResourceManagement() {
     if (formData.resourceType === "batch") {
       if (!formData.batchNo.trim()) {
         newErrors.batchNo = "Batch number is required";
-      } else if (!/^\d\.\d$/.test(formData.batchNo.trim())) {
-        newErrors.batchNo = "Batch number must be in format like 3.2";
       }
-
       if (!formData.department.trim()) {
         newErrors.department = "Department is required";
       }
-
       if (formData.capacity === "") {
         newErrors.capacity = "Capacity is required";
       } else if (Number(formData.capacity) <= 0) {
         newErrors.capacity = "Capacity must be greater than 0";
       }
-
       if (!formData.semester.trim()) {
         newErrors.semester = "Semester is required";
       } else if (!/^\d$/.test(formData.semester.trim())) {
         newErrors.semester = "Semester must be only one number";
       }
-
       if (!formData.academicYear.trim()) {
         newErrors.academicYear = "Academic year is required";
       } else if (!/^\d$/.test(formData.academicYear.trim())) {
@@ -142,17 +617,7 @@ function ResourceManagement() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     let updatedValue = value;
-
-    if (name === "batchNo") {
-      updatedValue = value.replace(/[^0-9.]/g, "").slice(0, 3);
-
-      const dotCount = (updatedValue.match(/\./g) || []).length;
-      if (dotCount > 1) {
-        return;
-      }
-    }
 
     if (name === "semester" || name === "academicYear") {
       updatedValue = value.replace(/\D/g, "").slice(0, 1);
@@ -170,11 +635,30 @@ function ResourceManagement() {
       };
     }
 
+    if (name === "lecturerTitle") {
+      updatedData = {
+        ...formData,
+        lecturerTitle: value,
+        name: "",
+      };
+    }
+
+    if (name === "code" && formData.resourceType === "module") {
+      const selectedModule = moduleOptions.find((module) => module.code === value);
+      updatedData = {
+        ...formData,
+        code: value,
+        name: selectedModule ? selectedModule.name : "",
+      };
+    }
+
     setFormData(updatedData);
 
     setErrors((prev) => ({
       ...prev,
       [name]: "",
+      ...(name === "lecturerTitle" ? { name: "" } : {}),
+      ...(name === "code" ? { name: "" } : {}),
     }));
   };
 
@@ -185,6 +669,7 @@ function ResourceManagement() {
 
     const payload = {
       resourceType: formData.resourceType,
+      lecturerTitle: formData.lecturerTitle.trim(),
       name:
         formData.resourceType === "batch"
           ? formData.batchNo.trim()
@@ -220,6 +705,7 @@ function ResourceManagement() {
     setEditingId(resource._id);
     setFormData({
       resourceType: resource.resourceType || "lecturer",
+      lecturerTitle: resource.lecturerTitle || "",
       name: resource.name || "",
       batchNo: resource.batchNo || "",
       code: resource.code || "",
@@ -267,6 +753,41 @@ function ResourceManagement() {
     if (type === "batch") return "resource-badge batch";
     return "resource-badge";
   };
+
+  const renderLecturerFullName = (resource) =>
+    [resource.lecturerTitle, resource.name].filter(Boolean).join(" ") || "-";
+
+  const filteredResources = resources.filter((resource) => {
+    const search = searchTerm.toLowerCase().trim();
+
+    if (!search) return true;
+
+    if (resource.resourceType === "lecturer") {
+      const lecturerFullName = `${resource.lecturerTitle || ""} ${
+        resource.name || ""
+      }`.toLowerCase();
+      return lecturerFullName.includes(search);
+    }
+
+    if (resource.resourceType === "hall") {
+      return (resource.name || "").toLowerCase().includes(search);
+    }
+
+    if (resource.resourceType === "module") {
+      return (
+        (resource.name || "").toLowerCase().includes(search) ||
+        (resource.code || "").toLowerCase().includes(search)
+      );
+    }
+
+    if (resource.resourceType === "batch") {
+      return (resource.batchNo || resource.name || "")
+        .toLowerCase()
+        .includes(search);
+    }
+
+    return true;
+  });
 
   const renderTableHeader = () => {
     if (filterType === "lecturer") {
@@ -348,7 +869,7 @@ function ResourceManagement() {
       );
     }
 
-    if (resources.length === 0) {
+    if (filteredResources.length === 0) {
       return (
         <tr>
           <td colSpan={getColumnCount()} className="resource-empty">
@@ -358,7 +879,7 @@ function ResourceManagement() {
       );
     }
 
-    return resources.map((resource) => {
+    return filteredResources.map((resource) => {
       if (filterType === "lecturer") {
         return (
           <tr key={resource._id}>
@@ -367,7 +888,7 @@ function ResourceManagement() {
                 {resource.resourceType}
               </span>
             </td>
-            <td>{resource.name || "-"}</td>
+            <td>{renderLecturerFullName(resource)}</td>
             <td>{resource.department || "-"}</td>
             <td>{resource.description || "-"}</td>
             <td>
@@ -503,7 +1024,11 @@ function ResourceManagement() {
               {resource.resourceType}
             </span>
           </td>
-          <td>{resource.batchNo || resource.name || "-"}</td>
+          <td>
+            {resource.resourceType === "lecturer"
+              ? renderLecturerFullName(resource)
+              : resource.batchNo || resource.name || "-"}
+          </td>
           <td>{resource.code || "-"}</td>
           <td>{resource.department || "-"}</td>
           <td>{resource.capacity ?? "-"}</td>
@@ -533,6 +1058,11 @@ function ResourceManagement() {
     });
   };
 
+  const lecturerNames =
+    formData.lecturerTitle && lecturersByTitle[formData.lecturerTitle]
+      ? lecturersByTitle[formData.lecturerTitle]
+      : [];
+
   return (
     <div className="resource-section">
       <div className="resource-card">
@@ -541,6 +1071,25 @@ function ResourceManagement() {
             <h2>Resource Management</h2>
             <p>Manage lecturers, halls, modules, and batches in one place.</p>
           </div>
+        </div>
+      </div>
+
+      <div className="resource-summary-grid">
+        <div className="resource-summary-card lecturers">
+          <h4>Total Lecturers</h4>
+          <p>{totalLecturers}</p>
+        </div>
+        <div className="resource-summary-card halls">
+          <h4>Total Halls</h4>
+          <p>{totalHalls}</p>
+        </div>
+        <div className="resource-summary-card modules">
+          <h4>Total Modules</h4>
+          <p>{totalModules}</p>
+        </div>
+        <div className="resource-summary-card batches">
+          <h4>Total Batches</h4>
+          <p>{totalBatches}</p>
         </div>
       </div>
 
@@ -576,28 +1125,62 @@ function ResourceManagement() {
             {formData.resourceType === "lecturer" && (
               <>
                 <div className="resource-form-group">
+                  <label>Lecturer Title</label>
+                  <select
+                    name="lecturerTitle"
+                    value={formData.lecturerTitle}
+                    onChange={handleChange}
+                    className="resource-input"
+                  >
+                    <option value="">Select lecturer title</option>
+                    <option value="Prof.">Prof.</option>
+                    <option value="Dr.">Dr.</option>
+                    <option value="Mr.">Mr.</option>
+                    <option value="Ms.">Ms.</option>
+                  </select>
+                  {errors.lecturerTitle && (
+                    <small className="error-text">{errors.lecturerTitle}</small>
+                  )}
+                </div>
+
+                <div className="resource-form-group">
                   <label>Lecturer Name</label>
-                  <input
-                    type="text"
+                  <select
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    placeholder="Enter lecturer name"
                     className="resource-input"
-                  />
+                    disabled={!formData.lecturerTitle}
+                  >
+                    <option value="">
+                      {formData.lecturerTitle
+                        ? "Select lecturer name"
+                        : "Select title first"}
+                    </option>
+                    {lecturerNames.map((lecturerName) => (
+                      <option key={lecturerName} value={lecturerName}>
+                        {lecturerName}
+                      </option>
+                    ))}
+                  </select>
                   {errors.name && <small className="error-text">{errors.name}</small>}
                 </div>
 
                 <div className="resource-form-group">
                   <label>Department</label>
-                  <input
-                    type="text"
+                  <select
                     name="department"
                     value={formData.department}
                     onChange={handleChange}
-                    placeholder="Enter department"
                     className="resource-input"
-                  />
+                  >
+                    <option value="">Select department</option>
+                    {departmentOptions.map((department) => (
+                      <option key={department} value={department}>
+                        {department}
+                      </option>
+                    ))}
+                  </select>
                   {errors.department && (
                     <small className="error-text">{errors.department}</small>
                   )}
@@ -609,27 +1192,37 @@ function ResourceManagement() {
               <>
                 <div className="resource-form-group">
                   <label>Location</label>
-                  <input
-                    type="text"
+                  <select
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    placeholder="Enter hall location"
                     className="resource-input"
-                  />
+                  >
+                    <option value="">Select location</option>
+                    {hallLocations.map((location) => (
+                      <option key={location} value={location}>
+                        {location}
+                      </option>
+                    ))}
+                  </select>
                   {errors.name && <small className="error-text">{errors.name}</small>}
                 </div>
 
                 <div className="resource-form-group">
                   <label>Department</label>
-                  <input
-                    type="text"
+                  <select
                     name="department"
                     value={formData.department}
                     onChange={handleChange}
-                    placeholder="Enter department"
                     className="resource-input"
-                  />
+                  >
+                    <option value="">Select department</option>
+                    {departmentOptions.map((department) => (
+                      <option key={department} value={department}>
+                        {department}
+                      </option>
+                    ))}
+                  </select>
                   {errors.department && (
                     <small className="error-text">{errors.department}</small>
                   )}
@@ -656,42 +1249,51 @@ function ResourceManagement() {
             {formData.resourceType === "module" && (
               <>
                 <div className="resource-form-group">
+                  <label>Module Code</label>
+                  <select
+                    name="code"
+                    value={formData.code}
+                    onChange={handleChange}
+                    className="resource-input"
+                  >
+                    <option value="">Select module code</option>
+                    {moduleOptions.map((module) => (
+                      <option key={`${module.code}-${module.name}`} value={module.code}>
+                        {module.code}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.code && <small className="error-text">{errors.code}</small>}
+                </div>
+
+                <div className="resource-form-group">
                   <label>Module Name</label>
                   <input
                     type="text"
                     name="name"
                     value={formData.name}
-                    onChange={handleChange}
-                    placeholder="Enter module name"
+                    readOnly
+                    placeholder="Module name will appear automatically"
                     className="resource-input"
                   />
                   {errors.name && <small className="error-text">{errors.name}</small>}
                 </div>
 
                 <div className="resource-form-group">
-                  <label>Code</label>
-                  <input
-                    type="text"
-                    name="code"
-                    value={formData.code}
-                    onChange={handleChange}
-                    placeholder="Enter module code"
-                    className="resource-input"
-                    maxLength="20"
-                  />
-                  {errors.code && <small className="error-text">{errors.code}</small>}
-                </div>
-
-                <div className="resource-form-group">
                   <label>Department</label>
-                  <input
-                    type="text"
+                  <select
                     name="department"
                     value={formData.department}
                     onChange={handleChange}
-                    placeholder="Enter department"
                     className="resource-input"
-                  />
+                  >
+                    <option value="">Select department</option>
+                    {departmentOptions.map((department) => (
+                      <option key={department} value={department}>
+                        {department}
+                      </option>
+                    ))}
+                  </select>
                   {errors.department && (
                     <small className="error-text">{errors.department}</small>
                   )}
@@ -703,15 +1305,19 @@ function ResourceManagement() {
               <>
                 <div className="resource-form-group">
                   <label>Batch Number</label>
-                  <input
-                    type="text"
+                  <select
                     name="batchNo"
                     value={formData.batchNo}
                     onChange={handleChange}
-                    placeholder="Enter batch number like 3.2"
                     className="resource-input"
-                    maxLength="3"
-                  />
+                  >
+                    <option value="">Select batch number</option>
+                    {batchOptions.map((batch) => (
+                      <option key={batch} value={batch}>
+                        {batch}
+                      </option>
+                    ))}
+                  </select>
                   {errors.batchNo && (
                     <small className="error-text">{errors.batchNo}</small>
                   )}
@@ -719,14 +1325,19 @@ function ResourceManagement() {
 
                 <div className="resource-form-group">
                   <label>Department</label>
-                  <input
-                    type="text"
+                  <select
                     name="department"
                     value={formData.department}
                     onChange={handleChange}
-                    placeholder="Enter department"
                     className="resource-input"
-                  />
+                  >
+                    <option value="">Select department</option>
+                    {departmentOptions.map((department) => (
+                      <option key={department} value={department}>
+                        {department}
+                      </option>
+                    ))}
+                  </select>
                   {errors.department && (
                     <small className="error-text">{errors.department}</small>
                   )}
@@ -817,10 +1428,24 @@ function ResourceManagement() {
           </div>
 
           <div className="resource-filter-box">
+            <label>Search</label>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search resource..."
+              className="resource-input"
+            />
+          </div>
+
+          <div className="resource-filter-box">
             <label>Filter by Type</label>
             <select
               value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
+              onChange={(e) => {
+                setFilterType(e.target.value);
+                setSearchTerm("");
+              }}
               className="resource-input"
             >
               <option value="">All Resources</option>

@@ -7,6 +7,12 @@ const resourceSchema = new mongoose.Schema(
       enum: ["lecturer", "hall", "module", "batch"],
       required: true,
     },
+    lecturerTitle: {
+      type: String,
+      enum: ["", "Prof.", "Dr.", "Mr.", "Ms."],
+      default: "",
+      trim: true,
+    },
     name: {
       type: String,
       required: true,
@@ -41,9 +47,10 @@ const resourceSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
-       batchNo: {
+    batchNo: {
       type: String,
       trim: true,
+      default: "",
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
