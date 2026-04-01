@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import API from "../services/api";
-import "../styles/TimetableManagement.css";
+import "../styles/Notification.css";
 
 function Notification() {
   const location = useLocation();
@@ -11,6 +11,7 @@ function Notification() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState("");
 
+  // Retrieve state passed from navigation
   const newClashes = Array.isArray(location.state?.newClashes)
     ? location.state.newClashes
     : [];
@@ -23,7 +24,6 @@ function Notification() {
     try {
       setLoading(true);
       setFetchError("");
-
       const res = await API.get("/timetable-entries");
       setEntries(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
@@ -37,30 +37,24 @@ function Notification() {
 
   const toMinutes = (time) => {
     if (!time || typeof time !== "string") return null;
-
     const parts = time.split(":");
     if (parts.length !== 2) return null;
-
     const hours = Number(parts[0]);
     const minutes = Number(parts[1]);
-
     if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
-
     return hours * 60 + minutes;
   };
 
   const notificationList = useMemo(() => {
     const clashes = [];
+    if (!entries.length) return clashes;
 
     for (let i = 0; i < entries.length; i++) {
       for (let j = i + 1; j < entries.length; j++) {
         const first = entries[i];
         const second = entries[j];
 
-        if (!first || !second) continue;
-
-        const sameDay = first.day === second.day;
-        if (!sameDay) continue;
+        if (!first || !second || first.day !== second.day) continue;
 
         const firstStart = toMinutes(first.startTime);
         const firstEnd = toMinutes(first.endTime);
@@ -83,16 +77,8 @@ function Notification() {
           String(first.hall || "").trim().toLowerCase() ===
           String(second.hall || "").trim().toLowerCase();
 
-        const firstLecturerId =
-          first.lecturer && typeof first.lecturer === "object"
-            ? first.lecturer._id
-            : first.lecturer;
-
-        const secondLecturerId =
-          second.lecturer && typeof second.lecturer === "object"
-            ? second.lecturer._id
-            : second.lecturer;
-
+        const firstLecturerId = first.lecturer?._id || first.lecturer;
+        const secondLecturerId = second.lecturer?._id || second.lecturer;
         const sameLecturer =
           firstLecturerId && secondLecturerId
             ? firstLecturerId === secondLecturerId
@@ -100,7 +86,6 @@ function Notification() {
 
         if (sameHall || sameLecturer) {
           let clashType = "";
-
           if (sameHall && sameLecturer) {
             clashType = "Hall and Lecturer Clash";
           } else if (sameHall) {
@@ -137,12 +122,38 @@ function Notification() {
         }
       }
     }
-
     return clashes;
   }, [entries]);
 
   return (
-    <div className="resource-section">
+    <div className="resource-section" style={{ padding: "20px", position: "relative" }}>
+      
+      {/* TOP LEFT BACK ICON */}
+      <div 
+        style={{ 
+          marginBottom: "15px", 
+          display: "flex", 
+          alignItems: "center", 
+          cursor: "pointer", 
+          width: "fit-content" 
+        }}
+        onClick={() => navigate("/session-management")}
+        title="Back to Session Management"
+      >
+        <span style={{ 
+          fontSize: "24px", 
+          fontWeight: "bold", 
+          marginRight: "8px",
+          color: "#555" 
+        }}>
+          ←
+        </span>
+        <span style={{ fontSize: "16px", color: "#555", fontWeight: "500" }}>
+          Back
+        </span>
+      </div>
+
+      {/* Header Section */}
       <div className="resource-card">
         <div className="resource-topbar">
           <h2>Notifications</h2>
@@ -150,77 +161,38 @@ function Notification() {
         </div>
       </div>
 
-      <div className="resource-card no-print">
-        <div className="resource-action-row">
-          <button
-            className="resource-secondary-btn"
-            onClick={() => navigate("/session-management")}
-          >
-            Back to Session Management
-          </button>
-        </div>
-      </div>
-
+      {/* NEW CLASHES SECTION (FROM LOCATION STATE) */}
       {newClashes.length > 0 && (
-        <div className="resource-card">
+        <div className="resource-card" style={{ marginTop: "20px", border: "2px solid #ff4d4d" }}>
           <div className="resource-header">
             <div>
-              <h3>New Clashes Detected</h3>
+              <h3 style={{ color: "#d32f2f" }}>New Clashes Detected</h3>
               <p>All clashes for the session you just saved are shown below.</p>
             </div>
           </div>
 
           <div className="session-stack">
             {newClashes.map((clash, index) => (
-              <div key={clash.id || index} className="session-card">
-                <div className="session-module">
+              <div key={clash.id || index} className="session-card" style={{ marginBottom: "15px", padding: "15px", backgroundColor: "#fff5f5" }}>
+                <div className="session-module" style={{ fontWeight: "bold", fontSize: "1.1rem", marginBottom: "10px" }}>
                   {clash.clashType || "Clash Detected"}
                 </div>
 
-                <div className="session-info">
-                  <strong>New Session:</strong>
-                </div>
-                <div className="session-info">
-                  Module: {clash.newSession?.module || "N/A"}
-                </div>
-                <div className="session-info">
-                  Lecturer: {clash.newSession?.lecturer || "N/A"}
-                </div>
-                <div className="session-info">
-                  Batch / Group: {clash.newSession?.batchGroup || "N/A"}
-                </div>
-                <div className="session-info">
-                  Hall: {clash.newSession?.hall || "N/A"}
-                </div>
-                <div className="session-info">
-                  Day: {clash.newSession?.day || "N/A"}
-                </div>
-                <div className="session-info">
-                  Time: {clash.newSession?.startTime || "N/A"} -{" "}
-                  {clash.newSession?.endTime || "N/A"}
-                </div>
-
-                <div className="session-info" style={{ marginTop: "12px" }}>
-                  <strong>Clashing With:</strong>
-                </div>
-                <div className="session-info">
-                  Module: {clash.existingSession?.module || "N/A"}
-                </div>
-                <div className="session-info">
-                  Lecturer: {clash.existingSession?.lecturer || "N/A"}
-                </div>
-                <div className="session-info">
-                  Batch / Group: {clash.existingSession?.batchGroup || "N/A"}
-                </div>
-                <div className="session-info">
-                  Hall: {clash.existingSession?.hall || "N/A"}
-                </div>
-                <div className="session-info">
-                  Day: {clash.existingSession?.day || "N/A"}
-                </div>
-                <div className="session-info">
-                  Time: {clash.existingSession?.startTime || "N/A"} -{" "}
-                  {clash.existingSession?.endTime || "N/A"}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                  <div>
+                    <strong>New Session:</strong>
+                    <div className="session-info">Module: {clash.newSession?.module || "N/A"}</div>
+                    <div className="session-info">Lecturer: {clash.newSession?.lecturer || "N/A"}</div>
+                    <div className="session-info">Hall: {clash.newSession?.hall || "N/A"}</div>
+                    <div className="session-info">Time: {clash.newSession?.startTime} - {clash.newSession?.endTime}</div>
+                  </div>
+                  <div>
+                    <strong>Clashing With:</strong>
+                    <div className="session-info">Module: {clash.existingSession?.module || "N/A"}</div>
+                    <div className="session-info">Lecturer: {clash.existingSession?.lecturer || "N/A"}</div>
+                    <div className="session-info">Hall: {clash.existingSession?.hall || "N/A"}</div>
+                    <div className="session-info">Time: {clash.existingSession?.startTime} - {clash.existingSession?.endTime}</div>
+                  </div>
                 </div>
               </div>
             ))}
@@ -228,7 +200,8 @@ function Notification() {
         </div>
       )}
 
-      <div className="resource-card">
+      {/* ALL DETECTED CLASHES SECTION */}
+      <div className="resource-card" style={{ marginTop: "20px" }}>
         <div className="resource-header">
           <div>
             <h3>All Clash Notifications</h3>
@@ -239,48 +212,31 @@ function Notification() {
         {loading ? (
           <div className="resource-empty">Loading notifications...</div>
         ) : fetchError ? (
-          <div className="resource-empty">{fetchError}</div>
+          <div className="resource-empty" style={{ color: "red" }}>{fetchError}</div>
         ) : notificationList.length === 0 ? (
           <div className="resource-empty">No clash notifications found.</div>
         ) : (
           <div className="session-stack">
             {notificationList.map((item) => (
-              <div key={item.id} className="session-card">
-                <div className="session-module">{item.type}</div>
-
+              <div key={item.id} className="session-card" style={{ borderLeft: "5px solid #ffa000", marginBottom: "15px", padding: "15px" }}>
+                <div className="session-module" style={{ color: "#ffa000", fontWeight: "bold" }}>{item.type}</div>
                 <div className="session-info">
-                  <strong>Day:</strong> {item.day}
-                </div>
-                <div className="session-info">
-                  <strong>Time:</strong> {item.startTime} - {item.endTime}
+                  <strong>Day:</strong> {item.day} | <strong>Time:</strong> {item.startTime} - {item.endTime}
                 </div>
 
-                <div className="session-info" style={{ marginTop: "10px" }}>
-                  <strong>Session 1:</strong>
-                </div>
-                <div className="session-info">
-                  Module: {item.firstSession.module}
-                </div>
-                <div className="session-info">
-                  Lecturer: {item.firstSession.lecturer}
-                </div>
-                <div className="session-info">Hall: {item.firstSession.hall}</div>
-                <div className="session-info">
-                  Batch / Group: {item.firstSession.batchGroup}
-                </div>
-
-                <div className="session-info" style={{ marginTop: "10px" }}>
-                  <strong>Session 2:</strong>
-                </div>
-                <div className="session-info">
-                  Module: {item.secondSession.module}
-                </div>
-                <div className="session-info">
-                  Lecturer: {item.secondSession.lecturer}
-                </div>
-                <div className="session-info">Hall: {item.secondSession.hall}</div>
-                <div className="session-info">
-                  Batch / Group: {item.secondSession.batchGroup}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginTop: "10px" }}>
+                   <div>
+                      <strong>Session 1:</strong>
+                      <div>{item.firstSession.module} ({item.firstSession.lecturer})</div>
+                      <div>Hall: {item.firstSession.hall}</div>
+                      <div>Batch / Group: {item.firstSession.batchGroup}</div>
+                   </div>
+                   <div>
+                      <strong>Session 2:</strong>
+                      <div>{item.secondSession.module} ({item.secondSession.lecturer})</div>
+                      <div>Hall: {item.secondSession.hall}</div>
+                      <div>Batch / Group: {item.secondSession.batchGroup}</div>
+                   </div>
                 </div>
               </div>
             ))}
