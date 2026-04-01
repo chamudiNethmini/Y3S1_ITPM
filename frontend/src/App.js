@@ -1,5 +1,10 @@
 import "./App.css";
-import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useNavigate,
+} from "react-router-dom";
 
 import AdminLogin from "./pages/AdminLogin";
 import CoordinatorLogin from "./pages/CoordinatorLogin";
@@ -9,10 +14,12 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import CoordinatorDashboard from "./pages/CoordinatorDashboard";
 import LecturerDashboard from "./pages/LecturerDashboard";
+
 import Ticket from "./pages/Ticket";
 import Profile from "./pages/Profile";
 import FAQ from "./pages/FAQ";
 import PrivacyPolicy from "./pages/Privacy";
+import Notification from "./pages/Notification";
 
 function Home() {
   const navigate = useNavigate();
@@ -116,7 +123,7 @@ function App() {
         <Route path="/coordinator" element={<CoordinatorLogin />} />
         <Route path="/lecturer" element={<LecturerLogin />} />
         <Route path="/faq" element={<FAQ />} />
-        <Route path="/privacy" element={< PrivacyPolicy/>} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
 
         {/* PROTECTED DASHBOARD ROUTES */}
         <Route
@@ -149,6 +156,7 @@ function App() {
         {/* OTHER ROUTES */}
         <Route path="/ticket" element={<Ticket />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/notifications" element={<Notification />} />
       </Routes>
     </Router>
   );
