@@ -7,6 +7,8 @@ import Navbar from "../components/Navbar";
 function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
+  const [tickets, setTickets] = useState([]);
+  const [ticketReply, setTicketReply] = useState({});
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
@@ -268,9 +270,35 @@ function AdminDashboard() {
     }
   };
 
+  const fetchTickets = async () => {
+    try {
+      const res = await API.get("/tickets/all");
+      setTickets(res.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleReplyTicket = async (ticketId) => {
+    const reply = ticketReply[ticketId]?.trim();
+    if (!reply) {
+      alert("Reply cannot be empty");
+      return;
+    }
+    try {
+      await API.put(`/tickets/reply/${ticketId}`, { reply });
+      setTicketReply((prev) => ({ ...prev, [ticketId]: "" }));
+      fetchTickets();
+      alert("Reply sent successfully");
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to send reply");
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
     fetchAuditLogs();
+    fetchTickets();
   }, []);
 
   // ================= CREATE USER =================
@@ -622,6 +650,66 @@ function AdminDashboard() {
               Publish
             </button>
           </div>
+        </div>
+
+        {/* TICKETS */}
+        <div className="admin-card">
+          <h3>Received Tickets ({tickets.length})</h3>
+          {tickets.length === 0 ? (
+            <p style={{ color: "#888" }}>No tickets received.</p>
+          ) : (
+            <div className="audit-scroll">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Ticket ID</th>
+                    <th>From</th>
+                    <th>Subject</th>
+                    <th>Message</th>
+                    <th>Status</th>
+                    <th>Reply</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tickets.map((ticket) => (
+                    <tr key={ticket._id}>
+                      <td>{ticket.ticketId}</td>
+                      <td>{ticket.sender?.name || "Unknown"}<br /><small>{ticket.sender?.role}</small></td>
+                      <td>{ticket.subject}</td>
+                      <td style={{ maxWidth: "200px", wordBreak: "break-word" }}>{ticket.message}</td>
+                      <td>
+                        <span className={`status ${ticket.status}`}>{ticket.status}</span>
+                      </td>
+                      <td>
+                        {ticket.status === "replied" ? (
+                          <span style={{ color: "#28a745" }}>{ticket.reply}</span>
+                        ) : (
+                          <div style={{ display: "flex", gap: "6px" }}>
+                            <input
+                              type="text"
+                              placeholder="Write reply..."
+                              value={ticketReply[ticket._id] || ""}
+                              onChange={(e) =>
+                                setTicketReply((prev) => ({ ...prev, [ticket._id]: e.target.value }))
+                              }
+                              style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", flex: 1 }}
+                            />
+                            <button
+                              className="primary-btn"
+                              style={{ padding: "6px 12px", fontSize: "13px" }}
+                              onClick={() => handleReplyTicket(ticket._id)}
+                            >
+                              Send
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* AUDIT LOGS */}

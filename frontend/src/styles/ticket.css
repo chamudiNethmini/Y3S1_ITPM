@@ -1,80 +1,145 @@
+/* ticket.css - Modern Professional Theme */
+
+:root {
+  --primary-blue: #007bff;
+  --primary-hover: #0056b3;
+  --bg-gray: #f4f6f9;
+  --dark-text: #333;
+  --light-text: #666;
+  --white: #ffffff;
+  --border-color: #dee2e6;
+  --pending-bg: #fff5f5;
+  --pending-text: #dc3545;
+  --replied-bg: #f0fff4;
+  --replied-text: #28a745;
+}
 
 body, .page {
-  background-color: #c8cbcf; /* light gray page background */
-  font-family: Arial, sans-serif;
+  background-color: var(--bg-gray);
+  font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+  color: var(--dark-text);
+  line-height: 1.6;
 }
 
-
-
+/* Card Styling */
 .card {
-  background: #fff;
-  padding: 20px;
-  border-radius: 10px;
-  margin: 20px 0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  background: var(--white);
+  padding: 25px;
+  border-radius: 12px;
+  margin-bottom: 25px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease;
 }
 
+.card h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 1.25rem;
+  color: var(--dark-text);
+  border-left: 4px solid var(--primary-blue);
+  padding-left: 15px;
+}
+
+/* Form Elements */
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
-/* ✅ FIX 1: Remove global styling from input */
-textarea, select {
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--light-text);
+}
+
+textarea, select, input[type="text"] {
   width: 100%;
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  background-color: var(--white);
+  box-sizing: border-box;
 }
 
-/* ✅ Subject input (plain, no color) */
+/* Refined Subject Input */
 input[type="text"] {
-  width: 100%;
-  padding: 10px;
-  border: none;
-  border-bottom: 2px solid #ccc;
-  background: transparent;
-  outline: none;
+  border: 1px solid var(--border-color);
 }
 
-/* Focus effect (professional look) */
-input[type="text"]:focus {
-  border-bottom: 2px solid #007bff;
+input[type="text"]:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
 }
 
 textarea {
-  height: 180px;
+  height: 150px;
   resize: vertical;
 }
 
+/* Buttons */
 .btn-primary {
-  background: #007bff;
+  background: var(--primary-blue);
   color: white;
-  padding: 10px 15px;
+  padding: 12px 24px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
+  font-weight: 600;
   cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
 }
 
 .btn-secondary {
-  background: gray;
+  background: #6c757d;
   color: white;
-  padding: 8px 12px;
+  padding: 10px 20px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s;
 }
 
-.small {
-  padding: 6px 10px;
+.btn-secondary:hover {
+  opacity: 0.9;
 }
 
+/* Filter Bar */
 .filter-bar {
-  margin: 20px 0;
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 15px;
+  background: #e9ecef;
+  border-radius: 10px;
+  margin-bottom: 20px;
 }
 
-/* ================= TABLE ================= */
+.filter-bar input[type="text"] {
+  flex: 1;
+  min-width: 200px;
+}
 
+.filter-bar select {
+  width: auto;
+  min-width: 150px;
+}
+
+/* Table Design */
 .table-container {
-  overflow-x: auto;
+  background: var(--white);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--border-color);
 }
 
 .ticket-table {
@@ -82,89 +147,99 @@ textarea {
   border-collapse: collapse;
 }
 
-/* ✅ FIX 2: Table header clearly visible */
 .ticket-table th {
-  background: #222;   /* dark background */
-  color: white;       /* white text */
-  font-weight: bold;
+  background: #212529; /* Darker modern header */
+  color: #f8f9fa;
+  font-weight: 500;
   text-align: left;
+  padding: 15px;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
 }
 
-.ticket-table th, 
 .ticket-table td {
-  border: 1px solid #ddd;
-  padding: 12px;
+  padding: 15px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.9rem;
+  vertical-align: middle;
 }
 
-/* ================= STATUS ================= */
-
-/* base style */
-.status {
-  padding: 5px 10px;
-  border-radius: 5px;
-  font-weight: 600;
+.ticket-table tr:last-child td {
+  border-bottom: none;
 }
 
-/* ✅ FIX 3: readable pending */
-.status.pending {
-  background: #ffe5b4;   /* light orange */
-  color: #cc7a00;        /* dark orange text */
-}
-
-/* ✅ FIX 4: resolved/replied green */
-.status.resolved {
-  background: #d4edda;
-  color: #155724;
-}
-
-/* reply box */
-.reply-box {
-  display: flex;
-  gap: 5px;
+.ticket-table tr:hover td {
+  background-color: #f8f9fa;
 }
 
 .message-cell {
-  max-width: 250px;
-  word-wrap: break-word;
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--light-text);
 }
 
-/* ================= STATUS ================= */
+.message-cell:hover {
+  white-space: normal;
+  color: var(--dark-text);
+}
 
-/* base style */
+/* Status Badges */
 .status {
-  padding: 5px 10px;
-  border-radius: 5px;
-  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
-/* 🔴 pending → RED */
 .status.pending {
-  background: #f8d7da;
-  color: #dc3545;
+  background: var(--pending-bg);
+  color: var(--pending-text);
+  border: 1px solid #f5c6cb;
 }
 
-/* 🟢 replied → GREEN */
 .status.replied {
-  background: #d4edda;
-  color: #28a745;
+  background: var(--replied-bg);
+  color: var(--replied-text);
+  border: 1px solid #c3e6cb;
 }
 
-label {
-  display: block;
-  margin-bottom: 6px;
-  font-weight: 600;
-  color: #333;
+/* Reply Interaction Box */
+.reply-action-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.ticket-table td,
-.ticket-table th {
-  vertical-align: top;
+.reply-box {
+  display: flex;
+  gap: 8px;
+  animation: fadeIn 0.3s ease;
 }
 
-.ticket-table td {
-  background: #fff;
+.reply-box input {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  border-radius: 6px;
 }
 
-.card h3 {
-  margin-top: 0;
+.reply-box .btn-primary.small {
+  padding: 8px 15px;
+  font-size: 0.8rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
