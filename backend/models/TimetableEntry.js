@@ -25,7 +25,14 @@ const timetableEntrySchema = new mongoose.Schema(
     day: {
       type: String,
       required: true,
-      enum: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+      enum: [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ],
     },
     startTime: {
       type: String,
@@ -35,18 +42,21 @@ const timetableEntrySchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+
+    // 🔥 UPDATED PART (status eka update kala)
     status: {
       type: String,
-      enum: ["draft", "published"],
+      enum: ["draft", "sent", "published"], // ✅ "sent" add kala
       default: "draft",
     },
+
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("TimetableEntry", timetableEntrySchema);

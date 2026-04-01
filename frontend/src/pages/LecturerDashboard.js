@@ -102,7 +102,7 @@ function LecturerDashboard() {
   const fetchTimetable = async () => {
     try {
       setLoading(true);
-      const res = await API.get("/timetable/published");
+      const res = await API.get("/timetable/lic");
       setTimetable(res.data);
     } catch (error) {
       alert("Failed to load timetable");
