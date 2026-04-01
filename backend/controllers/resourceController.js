@@ -5,7 +5,9 @@ exports.createResource = async (req, res) => {
   try {
     const {
       resourceType,
+      lecturerTitle,
       name,
+      batchNo,
       code,
       department,
       capacity,
@@ -20,6 +22,12 @@ exports.createResource = async (req, res) => {
       });
     }
 
+    if (resourceType === "lecturer" && !lecturerTitle) {
+      return res.status(400).json({
+        message: "Lecturer title is required",
+      });
+    }
+
     if (capacity < 0) {
       return res.status(400).json({
         message: "Capacity cannot be negative",
@@ -28,8 +36,10 @@ exports.createResource = async (req, res) => {
 
     const existing = await Resource.findOne({
       resourceType,
+      lecturerTitle: resourceType === "lecturer" ? lecturerTitle?.trim() || "" : "",
       name: name.trim(),
       code: code?.trim() || "",
+      batchNo: batchNo?.trim() || "",
     });
 
     if (existing) {
@@ -40,13 +50,15 @@ exports.createResource = async (req, res) => {
 
     const resource = await Resource.create({
       resourceType,
-      name,
-      code,
-      department,
-      capacity,
-      semester,
-      academicYear,
-      description,
+      lecturerTitle: resourceType === "lecturer" ? lecturerTitle?.trim() || "" : "",
+      name: name.trim(),
+      batchNo: batchNo?.trim() || "",
+      code: code?.trim() || "",
+      department: department?.trim() || "",
+      capacity: capacity || 0,
+      semester: semester?.trim() || "",
+      academicYear: academicYear?.trim() || "",
+      description: description?.trim() || "",
       createdBy: req.user.id,
     });
 
@@ -93,7 +105,9 @@ exports.updateResource = async (req, res) => {
   try {
     const {
       resourceType,
+      lecturerTitle,
       name,
+      batchNo,
       code,
       department,
       capacity,
@@ -105,6 +119,12 @@ exports.updateResource = async (req, res) => {
     if (!resourceType || !name) {
       return res.status(400).json({
         message: "Resource type and name are required",
+      });
+    }
+
+    if (resourceType === "lecturer" && !lecturerTitle) {
+      return res.status(400).json({
+        message: "Lecturer title is required",
       });
     }
 
@@ -120,14 +140,32 @@ exports.updateResource = async (req, res) => {
       return res.status(404).json({ message: "Resource not found" });
     }
 
+    const duplicate = await Resource.findOne({
+      _id: { $ne: req.params.id },
+      resourceType,
+      lecturerTitle: resourceType === "lecturer" ? lecturerTitle?.trim() || "" : "",
+      name: name.trim(),
+      code: code?.trim() || "",
+      batchNo: batchNo?.trim() || "",
+    });
+
+    if (duplicate) {
+      return res.status(400).json({
+        message: "Resource already exists",
+      });
+    }
+
     resource.resourceType = resourceType;
-    resource.name = name;
-    resource.code = code;
-    resource.department = department;
-    resource.capacity = capacity;
-    resource.semester = semester;
-    resource.academicYear = academicYear;
-    resource.description = description;
+    resource.lecturerTitle =
+      resourceType === "lecturer" ? lecturerTitle?.trim() || "" : "";
+    resource.name = name.trim();
+    resource.batchNo = batchNo?.trim() || "";
+    resource.code = code?.trim() || "";
+    resource.department = department?.trim() || "";
+    resource.capacity = capacity || 0;
+    resource.semester = semester?.trim() || "";
+    resource.academicYear = academicYear?.trim() || "";
+    resource.description = description?.trim() || "";
 
     await resource.save();
 
