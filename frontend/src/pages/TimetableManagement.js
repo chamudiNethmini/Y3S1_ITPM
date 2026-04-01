@@ -94,6 +94,16 @@ function TimetableManagementPage() {
     window.print();
   };
 
+  // 🔥 NEW - Send to LIC handler
+  const handleSendToLic = async () => {
+    try {
+      await API.put("/timetable-entries/send-to-lic");
+      alert("Timetable sent to LIC ✅");
+    } catch (err) {
+      alert("Error sending timetable");
+    }
+  };
+
   // Collect all unique time slots from fetched sessions
   const timeSlots = useMemo(() => {
     const uniqueSlots = new Map();
@@ -181,7 +191,10 @@ function TimetableManagementPage() {
             Apply Filter
           </button>
 
-          <button className="resource-secondary-btn" onClick={handleClearFilters}>
+          <button
+            className="resource-secondary-btn"
+            onClick={handleClearFilters}
+          >
             Clear Filter
           </button>
 
@@ -193,6 +206,11 @@ function TimetableManagementPage() {
 
           <button className="resource-print-btn" onClick={handlePrint}>
             Print Timetable
+          </button>
+
+          {/* 🔥 NEW - Send to LIC button */}
+          <button className="resource-primary-btn" onClick={handleSendToLic}>
+            Send to LIC
           </button>
         </div>
       </div>
@@ -232,18 +250,27 @@ function TimetableManagementPage() {
                         const sessions = groupedSessions[day]?.[slotKey] || [];
 
                         return (
-                          <td key={`${day}-${slotKey}`} className="timetable-day-cell">
+                          <td
+                            key={`${day}-${slotKey}`}
+                            className="timetable-day-cell"
+                          >
                             {sessions.length > 0 ? (
                               <div className="session-stack">
                                 {sessions.map((session) => (
-                                  <div key={session._id} className="session-card">
-                                    <div className="session-module">{session.module}</div>
+                                  <div
+                                    key={session._id}
+                                    className="session-card"
+                                  >
+                                    <div className="session-module">
+                                      {session.module}
+                                    </div>
                                     <div className="session-info">
                                       <strong>Lecturer:</strong>{" "}
                                       {session.lecturer?.name || "N/A"}
                                     </div>
                                     <div className="session-info">
-                                      <strong>Batch:</strong> {session.batchGroup}
+                                      <strong>Batch:</strong>{" "}
+                                      {session.batchGroup}
                                     </div>
                                     <div className="session-info">
                                       <strong>Hall:</strong> {session.hall}

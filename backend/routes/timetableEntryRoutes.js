@@ -8,7 +8,14 @@ router.get(
   "/lecturers",
   verifyToken,
   authorizeRoles("admin", "coordinator"),
-  timetableEntryController.getLecturers
+  timetableEntryController.getLecturers,
+);
+
+router.get(
+  "/lic",
+  verifyToken,
+  authorizeRoles("lic"),
+  timetableEntryController.getLicTimetable,
 );
 
 router.get("/", verifyToken, timetableEntryController.getTimetableEntries);
@@ -17,28 +24,35 @@ router.post(
   "/",
   verifyToken,
   authorizeRoles("admin", "coordinator"),
-  timetableEntryController.createTimetableEntry
+  timetableEntryController.createTimetableEntry,
+);
+
+router.put(
+  "/send-to-lic",
+  verifyToken,
+  authorizeRoles("coordinator"),
+  timetableEntryController.sendToLic,
 );
 
 router.put(
   "/:id",
   verifyToken,
   authorizeRoles("admin", "coordinator"),
-  timetableEntryController.updateTimetableEntry
+  timetableEntryController.updateTimetableEntry,
 );
 
 router.delete(
   "/:id",
   verifyToken,
   authorizeRoles("admin", "coordinator"),
-  timetableEntryController.deleteTimetableEntry
+  timetableEntryController.deleteTimetableEntry,
 );
 
 router.patch(
   "/:id/publish",
   verifyToken,
   authorizeRoles("admin", "coordinator"),
-  timetableEntryController.publishTimetableEntry
+  timetableEntryController.publishTimetableEntry,
 );
 
 module.exports = router;

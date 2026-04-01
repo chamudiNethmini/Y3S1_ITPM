@@ -2,7 +2,9 @@ const TimetableEntry = require("../models/TimetableEntry");
 const User = require("../models/User");
 
 const toMinutes = (time) => {
-  const [hours, minutes] = String(time || "").split(":").map(Number);
+  const [hours, minutes] = String(time || "")
+    .split(":")
+    .map(Number);
 
   if (Number.isNaN(hours) || Number.isNaN(minutes)) {
     return null;
@@ -36,7 +38,12 @@ const findClashes = async ({
     const existingStart = toMinutes(entry.startTime);
     const existingEnd = toMinutes(entry.endTime);
 
-    const overlap = hasTimeOverlap(newStart, newEnd, existingStart, existingEnd);
+    const overlap = hasTimeOverlap(
+      newStart,
+      newEnd,
+      existingStart,
+      existingEnd,
+    );
     if (!overlap) return false;
 
     return (
@@ -75,7 +82,15 @@ exports.createTimetableEntry = async (req, res) => {
       status,
     } = req.body;
 
-    if (!module || !lecturer || !batchGroup || !hall || !day || !startTime || !endTime) {
+    if (
+      !module ||
+      !lecturer ||
+      !batchGroup ||
+      !hall ||
+      !day ||
+      !startTime ||
+      !endTime
+    ) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -87,7 +102,9 @@ exports.createTimetableEntry = async (req, res) => {
     }
 
     if (start >= end) {
-      return res.status(400).json({ message: "End time must be after start time" });
+      return res
+        .status(400)
+        .json({ message: "End time must be after start time" });
     }
 
     const lecturerUser = await User.findById(lecturer);
@@ -175,7 +192,15 @@ exports.updateTimetableEntry = async (req, res) => {
       status,
     } = req.body;
 
-    if (!module || !lecturer || !batchGroup || !hall || !day || !startTime || !endTime) {
+    if (
+      !module ||
+      !lecturer ||
+      !batchGroup ||
+      !hall ||
+      !day ||
+      !startTime ||
+      !endTime
+    ) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -187,7 +212,9 @@ exports.updateTimetableEntry = async (req, res) => {
     }
 
     if (start >= end) {
-      return res.status(400).json({ message: "End time must be after start time" });
+      return res
+        .status(400)
+        .json({ message: "End time must be after start time" });
     }
 
     const lecturerUser = await User.findById(lecturer);
@@ -229,7 +256,7 @@ exports.updateTimetableEntry = async (req, res) => {
         endTime,
         status: status || existing.status,
       },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     )
       .populate("lecturer", "name email")
       .populate("createdBy", "name email");
@@ -289,5 +316,29 @@ exports.publishTimetableEntry = async (req, res) => {
     res.json(populated);
   } catch (error) {
     res.status(500).json({ message: "Failed to publish timetable" });
+  }
+};
+
+// ================= SEND TO LIC =================
+exports.sendToLic = async (req, res) => {
+  try {
+    await TimetableEntry.updateMany({ status: "draft" }, { status: "sent" });
+    res.json({ message: "Timetable sent to LIC" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ================= GET LIC TIMETABLE ================= 🔥 NEW
+exports.getLicTimetable = async (req, res) => {
+  try {
+    const data = await TimetableEntry.find({ status: "sent" })
+      .populate("lecturer", "name email")
+      .populate("createdBy", "name email")
+      .sort({ day: 1, startTime: 1 });
+
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
   }
 };
