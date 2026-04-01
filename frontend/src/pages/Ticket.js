@@ -5,7 +5,6 @@ import "../styles/ticket.css";
 
 function Ticket() {
   const navigate = useNavigate();
-
   const [tickets, setTickets] = useState([]);
   const [receiverRole, setReceiverRole] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -13,12 +12,12 @@ function Ticket() {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
+  
+  // New states for replying
+  const [replyText, setReplyText] = useState("");
+  const [activeReplyId, setActiveReplyId] = useState(null);
 
-  const currentUser =
-    JSON.parse(localStorage.getItem("user")) ||
-    JSON.parse(localStorage.getItem("userInfo")) ||
-    {};
-
+  const currentUser = JSON.parse(localStorage.getItem("user")) || JSON.parse(localStorage.getItem("userInfo")) || {};
   const currentRole = currentUser.role || localStorage.getItem("role") || "";
 
   const getBackPath = () => {
@@ -28,248 +27,135 @@ function Ticket() {
   };
 
   const getReceiverOptions = () => {
-    if (currentRole === "admin") {
-      return [
-        { value: "coordinator", label: "Coordinator" },
-        { value: "lic", label: "Lecturer" },
-      ];
-    }
-
-    if (currentRole === "coordinator") {
-      return [
-        { value: "admin", label: "Admin" },
-        { value: "lic", label: "Lecturer" },
-      ];
-    }
-
-    return [
-      { value: "admin", label: "Admin" },
-      { value: "coordinator", label: "Coordinator" },
-    ];
+    if (currentRole === "admin") return [{ value: "coordinator", label: "Coordinator" }, { value: "lic", label: "Lecturer" }];
+    if (currentRole === "coordinator") return [{ value: "admin", label: "Admin" }, { value: "lic", label: "Lecturer" }];
+    return [{ value: "admin", label: "Admin" }, { value: "coordinator", label: "Coordinator" }];
   };
 
   useEffect(() => {
     const options = getReceiverOptions();
-    if (options.length > 0) {
-      setReceiverRole(options[0].value);
-    }
+    if (options.length > 0) setReceiverRole(options[0].value);
   }, [currentRole]);
 
-  const fetchMyTickets = async () => {
+  const fetchTickets = async () => {
     try {
-      const res = await API.get("/tickets/my");
+      // If Admin/Coord, they need to see tickets sent TO them (/all)
+      // Otherwise, they see tickets THEY sent (/my)
+      const endpoint = (currentRole === "admin" || currentRole === "coordinator") ? "/tickets/all" : "/tickets/my";
+      const res = await API.get(endpoint);
       setTickets(res.data);
     } catch (error) {
-      console.log("LOAD MY TICKETS ERROR:", error.response?.data || error.message);
-      alert(error.response?.data?.message || "Failed to load tickets");
+      console.log("LOAD TICKETS ERROR:", error.response?.data || error.message);
     }
   };
 
   useEffect(() => {
-    fetchMyTickets();
-  }, []);
-
-  useEffect(() => {
-    const handleScroll = () => setShowScrollTop(window.scrollY > 200);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+    fetchTickets();
+  }, [currentRole]);
 
   const handleCreateTicket = async () => {
-    const trimmedSubject = subject.trim();
-    const trimmedMessage = message.trim();
-
-    if (!trimmedSubject || !trimmedMessage || !receiverRole) {
-      alert("All fields are required");
-      return;
-    }
-
-    if (trimmedMessage.length > 1000) {
-      alert("Message cannot exceed 1000 characters");
-      return;
-    }
-
+    if (!subject.trim() || !message.trim() || !receiverRole) return alert("All fields required");
     try {
       if (currentRole === "lic") {
-        await API.post("/tickets/create", {
-          subject: trimmedSubject,
-          message: trimmedMessage,
-          receiverRole,
-        });
+        await API.post("/tickets/create", { subject, message, receiverRole });
       } else {
-        await API.post("/tickets/create-coordinator", {
-          subject: trimmedSubject,
-          message: trimmedMessage,
-          role: receiverRole,
-        });
+        await API.post("/tickets/create-coordinator", { subject, message, role: receiverRole });
       }
-
-      setSubject("");
-      setMessage("");
-      const options = getReceiverOptions();
-      setReceiverRole(options[0]?.value || "");
-      fetchMyTickets();
+      setSubject(""); setMessage("");
+      fetchTickets();
       alert("Ticket created successfully");
     } catch (error) {
-      console.log("CREATE TICKET ERROR:", error.response?.data || error.message);
-      alert(error.response?.data?.message || "Failed to create ticket");
+      alert("Failed to create ticket");
+    }
+  };
+
+  const handleReply = async (id) => {
+    if (!replyText.trim()) return alert("Reply cannot be empty");
+    try {
+      await API.put(`/tickets/reply/${id}`, { reply: replyText });
+      setReplyText("");
+      setActiveReplyId(null);
+      fetchTickets();
+      alert("Reply sent successfully");
+    } catch (error) {
+      alert("Failed to send reply");
     }
   };
 
   const filteredTickets = tickets
     .filter((t) => statusFilter === "all" || t.status === statusFilter)
-    .filter(
-      (t) =>
-        searchTerm.trim() === "" ||
-        t.subject.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    .filter((t) => searchTerm.trim() === "" || t.subject.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
-    <div
-      className="page"
-      style={{
-        padding: "20px",
-        backgroundColor: "#f4f6f9",
-        minHeight: "100vh",
-        fontFamily: "Arial, sans-serif",
-      }}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-        <h2 style={{ margin: 0, color: "#333" }}>🎫 Raise Ticket</h2>
-        <button onClick={() => navigate(getBackPath())} className="btn-secondary">
-          Back
-        </button>
+    <div className="page" style={{ padding: "20px", backgroundColor: "#f4f6f9", minHeight: "100vh" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
+        <h2>🎫 {currentRole === 'admin' ? 'Manage Tickets' : 'Raise Ticket'}</h2>
+        <button onClick={() => navigate(getBackPath())} className="btn-secondary">Back</button>
       </div>
 
-      <div className="card" style={{ borderRadius: "12px", boxShadow: "0 4px 15px rgba(0,0,0,0.1)" }}>
-        <h3 style={{ marginBottom: "15px", color: "#333" }}>Create Ticket</h3>
-
+      {/* Only show "Create" card if not Admin, or keep as is if Admin also sends tickets */}
+      <div className="card">
+        <h3>Create Ticket</h3>
         <div className="form-group">
           <label>Send To</label>
-          <select
-            value={receiverRole}
-            onChange={(e) => setReceiverRole(e.target.value)}
-            style={{ padding: "10px", width: "100%" }}
-          >
-            {getReceiverOptions().map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
+          <select value={receiverRole} onChange={(e) => setReceiverRole(e.target.value)}>
+            {getReceiverOptions().map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
           </select>
         </div>
-
-        <div className="form-group">
-          <input
-            type="text"
-            placeholder="Subject"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            style={{ fontSize: "14px" }}
-          />
-        </div>
-
-        <div className="form-group">
-          <textarea
-            placeholder="Write your message..."
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            maxLength={1000}
-          />
-          <small style={{ color: "#666" }}>{message.length}/1000</small>
-        </div>
-
-        <button onClick={handleCreateTicket} className="btn-primary">
-          Submit Ticket
-        </button>
+        <input type="text" placeholder="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} />
+        <textarea placeholder="Message..." value={message} onChange={(e) => setMessage(e.target.value)} maxLength={1000} />
+        <button onClick={handleCreateTicket} className="btn-primary">Submit Ticket</button>
       </div>
 
-      <div className="filter-bar" style={{ marginBottom: "20px", display: "flex", flexDirection: "column", gap: "10px" }}>
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          <label style={{ fontWeight: "600" }}>Status:</label>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid #ccc", fontSize: "14px", height: "38px" }}
-          >
-            <option value="all">All</option>
-            <option value="pending">Pending</option>
-            <option value="replied">Replied</option>
-          </select>
-        </div>
-
-        <input
-          type="text"
-          placeholder="Search by subject..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid #ccc", fontSize: "14px", height: "38px" }}
-        />
+      <div className="filter-bar" style={{ marginTop: "20px", display: "flex", gap: "10px" }}>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <option value="all">All</option>
+          <option value="pending">Pending</option>
+          <option value="replied">Replied</option>
+        </select>
+        <input type="text" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
       </div>
 
-      <div className="table-container" style={{ borderRadius: "8px", overflow: "hidden", boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
-        <table className="ticket-table" style={{ width: "100%", borderCollapse: "collapse", backgroundColor: "#fff" }}>
+      <div className="table-container" style={{ marginTop: "20px" }}>
+        <table className="ticket-table" style={{ width: "100%", backgroundColor: "#fff" }}>
           <thead>
             <tr style={{ backgroundColor: "#007bff", color: "#fff" }}>
               <th>ID</th>
-              <th>Send To</th>
+              <th>{currentRole === 'admin' ? 'From' : 'To'}</th>
               <th>Subject</th>
               <th>Message</th>
               <th>Status</th>
-              <th>Reply</th>
-              <th>Replied By</th>
+              <th>Reply Action</th>
             </tr>
           </thead>
           <tbody>
-            {filteredTickets.length > 0 ? (
-              filteredTickets.map((ticket, idx) => (
-                <tr key={ticket._id} style={{ backgroundColor: idx % 2 === 0 ? "#f9f9f9" : "#fff" }}>
-                  <td>{ticket.ticketId}</td>
-                  <td>{ticket.receiverRoles?.[0]}</td>
-                  <td>{ticket.subject}</td>
-                  <td className="message-cell">{ticket.message}</td>
-                  <td>
-                    <span className={`status ${ticket.status?.toLowerCase()}`}>{ticket.status}</span>
-                  </td>
-                  <td>{ticket.reply || "No reply yet"}</td>
-                  <td>{ticket.repliedBy?.name || "-"}</td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="7" style={{ textAlign: "center", padding: "20px" }}>
-                  No tickets found
+            {filteredTickets.map((ticket) => (
+              <tr key={ticket._id}>
+                <td>{ticket.ticketId}</td>
+                <td>{currentRole === 'admin' ? ticket.sender?.name : ticket.receiverRoles?.[0]}</td>
+                <td>{ticket.subject}</td>
+                <td>{ticket.message}</td>
+                <td><span className={`status ${ticket.status}`}>{ticket.status}</span></td>
+                <td>
+                  {ticket.status === "pending" && (currentRole === "admin" || currentRole === "coordinator") ? (
+                    <div>
+                      <input 
+                        type="text" 
+                        placeholder="Reply..." 
+                        value={activeReplyId === ticket._id ? replyText : ""}
+                        onChange={(e) => { setActiveReplyId(ticket._id); setReplyText(e.target.value); }}
+                      />
+                      <button onClick={() => handleReply(ticket._id)}>Send</button>
+                    </div>
+                  ) : (
+                    ticket.reply || "No reply"
+                  )}
                 </td>
               </tr>
-            )}
+            ))}
           </tbody>
         </table>
       </div>
-
-      {showScrollTop && (
-        <button
-          onClick={scrollToTop}
-          style={{
-            position: "fixed",
-            bottom: "20px",
-            right: "20px",
-            padding: "10px 15px",
-            fontSize: "18px",
-            borderRadius: "50%",
-            border: "none",
-            cursor: "pointer",
-            backgroundColor: "#007bff",
-            color: "#fff",
-            boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
-          }}
-        >
-          ↑
-        </button>
-      )}
     </div>
   );
 }
