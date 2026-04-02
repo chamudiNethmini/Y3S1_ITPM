@@ -6,7 +6,10 @@ import "../styles/SessionManagement.css";
 function SessionManagement() {
   const navigate = useNavigate();
 
+  const [modules, setModules] = useState([]);
   const [lecturers, setLecturers] = useState([]);
+  const [batchGroups, setBatchGroups] = useState([]);
+  const [halls, setHalls] = useState([]);
   const [entries, setEntries] = useState([]);
   const [editingId, setEditingId] = useState(null);
 
@@ -31,12 +34,21 @@ function SessionManagement() {
     endTime: "",
   });
 
-  const fetchLecturers = async () => {
+  const fetchResources = async () => {
     try {
-      const res = await API.get("/timetable-entries/lecturers");
-      setLecturers(res.data || []);
+      const [moduleRes, lecturerRes, batchRes, hallRes] = await Promise.all([
+        API.get("/timetable-entries/resources", { params: { type: "module" } }),
+        API.get("/timetable-entries/resources", { params: { type: "lecturer" } }),
+        API.get("/timetable-entries/resources", { params: { type: "batch" } }),
+        API.get("/timetable-entries/resources", { params: { type: "hall" } }),
+      ]);
+
+      setModules(moduleRes.data || []);
+      setLecturers(lecturerRes.data || []);
+      setBatchGroups(batchRes.data || []);
+      setHalls(hallRes.data || []);
     } catch (error) {
-      console.error(error);
+      console.error("Failed to fetch resources", error);
     }
   };
 
@@ -52,7 +64,7 @@ function SessionManagement() {
   };
 
   useEffect(() => {
-    fetchLecturers();
+    fetchResources();
     fetchEntries();
   }, []);
 
@@ -70,6 +82,35 @@ function SessionManagement() {
     return hours * 60 + minutes;
   };
 
+  const getResourceName = (resource) => {
+    if (!resource) return "N/A";
+
+    if (resource.resourceType === "lecturer") {
+      return `${resource.lecturerTitle || ""} ${resource.name}`.trim();
+    }
+
+    if (resource.resourceType === "module") {
+      return resource.code ? `${resource.code} - ${resource.name}` : resource.name;
+    }
+
+    if (resource.resourceType === "batch") {
+      return resource.batchNo ? `${resource.batchNo} - ${resource.name}` : resource.name;
+    }
+
+    if (resource.resourceType === "hall") {
+      return resource.capacity && resource.capacity > 0
+        ? `${resource.name} (Capacity: ${resource.capacity})`
+        : resource.name;
+    }
+
+    return resource.name || "N/A";
+  };
+
+  const getNameFromList = (list, id) => {
+    const item = list.find((resource) => resource._id === id);
+    return item ? getResourceName(item) : "N/A";
+  };
+
   const validateForm = () => {
     const newErrors = {
       module: "",
@@ -83,18 +124,8 @@ function SessionManagement() {
 
     let isValid = true;
 
-    const moduleRegex = /^[A-Za-z0-9\s\-&/().]+$/;
-    const batchRegex = /^[A-Za-z0-9\s\-/.()]+$/;
-    const hallRegex = /^[A-Za-z0-9\s\-/.()]+$/;
-
-    if (!form.module.trim()) {
+    if (!form.module) {
       newErrors.module = "Module is required";
-      isValid = false;
-    } else if (form.module.trim().length < 2) {
-      newErrors.module = "Module must be at least 2 characters";
-      isValid = false;
-    } else if (!moduleRegex.test(form.module.trim())) {
-      newErrors.module = "Module contains invalid characters";
       isValid = false;
     }
 
@@ -103,22 +134,13 @@ function SessionManagement() {
       isValid = false;
     }
 
-    if (!form.batchGroup.trim()) {
+    if (!form.batchGroup) {
       newErrors.batchGroup = "Batch / Group is required";
-      isValid = false;
-    } else if (form.batchGroup.trim().length < 2) {
-      newErrors.batchGroup = "Batch / Group must be at least 2 characters";
-      isValid = false;
-    } else if (!batchRegex.test(form.batchGroup.trim())) {
-      newErrors.batchGroup = "Batch / Group contains invalid characters";
       isValid = false;
     }
 
-    if (!form.hall.trim()) {
+    if (!form.hall) {
       newErrors.hall = "Hall is required";
-      isValid = false;
-    } else if (!hallRegex.test(form.hall.trim())) {
-      newErrors.hall = "Hall contains invalid characters";
       isValid = false;
     }
 
@@ -198,11 +220,6 @@ function SessionManagement() {
     setEditingId(null);
   };
 
-  const getLecturerNameById = (id) => {
-    const lecturer = lecturers.find((item) => item._id === id);
-    return lecturer?.name || "N/A";
-  };
-
   const findAllClashes = (allEntries, currentPayload, currentEditingId = null) => {
     const currentStart = toMinutes(currentPayload.startTime);
     const currentEnd = toMinutes(currentPayload.endTime);
@@ -235,14 +252,12 @@ function SessionManagement() {
         continue;
       }
 
-      const sameHall =
-        entry.hall?.trim().toLowerCase() ===
-        currentPayload.hall?.trim().toLowerCase();
-
+      const entryHallId = typeof entry.hall === "object" ? entry.hall?._id : entry.hall;
       const entryLecturerId =
         typeof entry.lecturer === "object" ? entry.lecturer?._id : entry.lecturer;
 
-      const sameLecturer = entryLecturerId === currentPayload.lecturer;
+      const sameHall = String(entryHallId) === String(currentPayload.hall);
+      const sameLecturer = String(entryLecturerId) === String(currentPayload.lecturer);
 
       if (sameHall || sameLecturer) {
         let clashType = "";
@@ -259,22 +274,27 @@ function SessionManagement() {
           id: `${currentPayload.day}-${currentPayload.startTime}-${currentPayload.endTime}-${entry._id}`,
           clashType,
           newSession: {
-            module: currentPayload.module,
-            lecturer: getLecturerNameById(currentPayload.lecturer),
-            batchGroup: currentPayload.batchGroup,
-            hall: currentPayload.hall,
+            module: getNameFromList(modules, currentPayload.module),
+            lecturer: getNameFromList(lecturers, currentPayload.lecturer),
+            batchGroup: getNameFromList(batchGroups, currentPayload.batchGroup),
+            hall: getNameFromList(halls, currentPayload.hall),
             day: currentPayload.day,
             startTime: currentPayload.startTime,
             endTime: currentPayload.endTime,
           },
           existingSession: {
-            module: entry.module,
+            module:
+              typeof entry.module === "object" ? getResourceName(entry.module) : entry.module,
             lecturer:
               typeof entry.lecturer === "object"
-                ? entry.lecturer?.name || "N/A"
+                ? getResourceName(entry.lecturer)
                 : "N/A",
-            batchGroup: entry.batchGroup,
-            hall: entry.hall,
+            batchGroup:
+              typeof entry.batchGroup === "object"
+                ? getResourceName(entry.batchGroup)
+                : entry.batchGroup,
+            hall:
+              typeof entry.hall === "object" ? getResourceName(entry.hall) : entry.hall,
             day: entry.day,
             startTime: entry.startTime,
             endTime: entry.endTime,
@@ -294,9 +314,6 @@ function SessionManagement() {
     try {
       const payload = {
         ...form,
-        module: form.module.trim(),
-        batchGroup: form.batchGroup.trim(),
-        hall: form.hall.trim(),
       };
 
       const allEntriesRes = await API.get("/timetable-entries");
@@ -330,10 +347,10 @@ function SessionManagement() {
   const handleEdit = (entry) => {
     setEditingId(entry._id);
     setForm({
-      module: entry.module,
+      module: entry.module?._id || entry.module,
       lecturer: entry.lecturer?._id || entry.lecturer,
-      batchGroup: entry.batchGroup,
-      hall: entry.hall,
+      batchGroup: entry.batchGroup?._id || entry.batchGroup,
+      hall: entry.hall?._id || entry.hall,
       day: entry.day,
       startTime: entry.startTime,
       endTime: entry.endTime,
@@ -376,6 +393,7 @@ function SessionManagement() {
       const res = await API.get("/timetable-entries");
       const allEntries = Array.isArray(res.data) ? res.data : [];
       const clashList = findAllClashes(allEntries, form, editingId);
+
       navigate("/notifications", {
         state: {
           newClashes: clashList,
@@ -408,13 +426,18 @@ function SessionManagement() {
         <div className="resource-form-grid">
           <div className="resource-form-group">
             <label>Module</label>
-            <input
+            <select
               className="resource-input"
-              type="text"
-              placeholder="Enter module"
               value={form.module}
               onChange={(e) => handleChange("module", e.target.value)}
-            />
+            >
+              <option value="">Select Module</option>
+              {modules.map((module) => (
+                <option key={module._id} value={module._id}>
+                  {getResourceName(module)}
+                </option>
+              ))}
+            </select>
             {errors.module && <span className="error-text">{errors.module}</span>}
           </div>
 
@@ -428,7 +451,7 @@ function SessionManagement() {
               <option value="">Select Lecturer</option>
               {lecturers.map((lecturer) => (
                 <option key={lecturer._id} value={lecturer._id}>
-                  {lecturer.name} ({lecturer.email})
+                  {getResourceName(lecturer)}
                 </option>
               ))}
             </select>
@@ -437,13 +460,18 @@ function SessionManagement() {
 
           <div className="resource-form-group">
             <label>Batch / Group</label>
-            <input
+            <select
               className="resource-input"
-              type="text"
-              placeholder="Enter batch/group"
               value={form.batchGroup}
               onChange={(e) => handleChange("batchGroup", e.target.value)}
-            />
+            >
+              <option value="">Select Batch / Group</option>
+              {batchGroups.map((batch) => (
+                <option key={batch._id} value={batch._id}>
+                  {getResourceName(batch)}
+                </option>
+              ))}
+            </select>
             {errors.batchGroup && (
               <span className="error-text">{errors.batchGroup}</span>
             )}
@@ -451,13 +479,18 @@ function SessionManagement() {
 
           <div className="resource-form-group">
             <label>Hall</label>
-            <input
+            <select
               className="resource-input"
-              type="text"
-              placeholder="Enter hall"
               value={form.hall}
               onChange={(e) => handleChange("hall", e.target.value)}
-            />
+            >
+              <option value="">Select Hall</option>
+              {halls.map((hall) => (
+                <option key={hall._id} value={hall._id}>
+                  {getResourceName(hall)}
+                </option>
+              ))}
+            </select>
             {errors.hall && <span className="error-text">{errors.hall}</span>}
           </div>
 
@@ -549,18 +582,32 @@ function SessionManagement() {
                 entries.map((entry) => (
                   <tr key={entry._id}>
                     <td>
-                      <span className="resource-badge module">{entry.module}</span>
-                    </td>
-                    <td>
-                      <span className="resource-badge lecturer">
-                        {entry.lecturer?.name || "N/A"}
+                      <span className="resource-badge module">
+                        {typeof entry.module === "object"
+                          ? getResourceName(entry.module)
+                          : entry.module}
                       </span>
                     </td>
                     <td>
-                      <span className="resource-badge batch">{entry.batchGroup}</span>
+                      <span className="resource-badge lecturer">
+                        {typeof entry.lecturer === "object"
+                          ? getResourceName(entry.lecturer)
+                          : "N/A"}
+                      </span>
                     </td>
                     <td>
-                      <span className="resource-badge hall">{entry.hall}</span>
+                      <span className="resource-badge batch">
+                        {typeof entry.batchGroup === "object"
+                          ? getResourceName(entry.batchGroup)
+                          : entry.batchGroup}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="resource-badge hall">
+                        {typeof entry.hall === "object"
+                          ? getResourceName(entry.hall)
+                          : entry.hall}
+                      </span>
                     </td>
                     <td>{entry.day}</td>
                     <td>{entry.startTime}</td>

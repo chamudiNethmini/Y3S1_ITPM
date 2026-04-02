@@ -11,7 +11,6 @@ function Notification() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState("");
 
-  // Retrieve state passed from navigation
   const newClashes = Array.isArray(location.state?.newClashes)
     ? location.state.newClashes
     : [];
@@ -45,6 +44,32 @@ function Notification() {
     return hours * 60 + minutes;
   };
 
+  const getResourceName = (resource) => {
+    if (!resource) return "N/A";
+
+    if (typeof resource === "string") return resource;
+
+    if (resource.resourceType === "lecturer") {
+      return `${resource.lecturerTitle || ""} ${resource.name}`.trim();
+    }
+
+    if (resource.resourceType === "module") {
+      return resource.code ? `${resource.code} - ${resource.name}` : resource.name;
+    }
+
+    if (resource.resourceType === "batch") {
+      return resource.batchNo ? `${resource.batchNo} - ${resource.name}` : resource.name;
+    }
+
+    if (resource.resourceType === "hall") {
+      return resource.capacity && resource.capacity > 0
+        ? `${resource.name} (Capacity: ${resource.capacity})`
+        : resource.name;
+    }
+
+    return resource.name || "N/A";
+  };
+
   const notificationList = useMemo(() => {
     const clashes = [];
     if (!entries.length) return clashes;
@@ -73,15 +98,18 @@ function Notification() {
         const timeOverlap = firstStart < secondEnd && secondStart < firstEnd;
         if (!timeOverlap) continue;
 
+        const firstHallId = first.hall?._id || first.hall;
+        const secondHallId = second.hall?._id || second.hall;
         const sameHall =
-          String(first.hall || "").trim().toLowerCase() ===
-          String(second.hall || "").trim().toLowerCase();
+          firstHallId && secondHallId
+            ? String(firstHallId) === String(secondHallId)
+            : false;
 
         const firstLecturerId = first.lecturer?._id || first.lecturer;
         const secondLecturerId = second.lecturer?._id || second.lecturer;
         const sameLecturer =
           firstLecturerId && secondLecturerId
-            ? firstLecturerId === secondLecturerId
+            ? String(firstLecturerId) === String(secondLecturerId)
             : false;
 
         if (sameHall || sameLecturer) {
@@ -101,51 +129,46 @@ function Notification() {
             startTime: first.startTime || "N/A",
             endTime: first.endTime || "N/A",
             firstSession: {
-              module: first.module || "N/A",
-              hall: first.hall || "N/A",
-              batchGroup: first.batchGroup || "N/A",
-              lecturer:
-                first.lecturer && typeof first.lecturer === "object"
-                  ? first.lecturer.name || "N/A"
-                  : "N/A",
+              module: getResourceName(first.module),
+              hall: getResourceName(first.hall),
+              batchGroup: getResourceName(first.batchGroup),
+              lecturer: getResourceName(first.lecturer),
             },
             secondSession: {
-              module: second.module || "N/A",
-              hall: second.hall || "N/A",
-              batchGroup: second.batchGroup || "N/A",
-              lecturer:
-                second.lecturer && typeof second.lecturer === "object"
-                  ? second.lecturer.name || "N/A"
-                  : "N/A",
+              module: getResourceName(second.module),
+              hall: getResourceName(second.hall),
+              batchGroup: getResourceName(second.batchGroup),
+              lecturer: getResourceName(second.lecturer),
             },
           });
         }
       }
     }
+
     return clashes;
   }, [entries]);
 
   return (
     <div className="resource-section" style={{ padding: "20px", position: "relative" }}>
-      
-      {/* TOP LEFT BACK ICON */}
-      <div 
-        style={{ 
-          marginBottom: "15px", 
-          display: "flex", 
-          alignItems: "center", 
-          cursor: "pointer", 
-          width: "fit-content" 
+      <div
+        style={{
+          marginBottom: "15px",
+          display: "flex",
+          alignItems: "center",
+          cursor: "pointer",
+          width: "fit-content",
         }}
         onClick={() => navigate("/session-management")}
         title="Back to Session Management"
       >
-        <span style={{ 
-          fontSize: "24px", 
-          fontWeight: "bold", 
-          marginRight: "8px",
-          color: "#555" 
-        }}>
+        <span
+          style={{
+            fontSize: "24px",
+            fontWeight: "bold",
+            marginRight: "8px",
+            color: "#555",
+          }}
+        >
           ←
         </span>
         <span style={{ fontSize: "16px", color: "#555", fontWeight: "500" }}>
@@ -153,7 +176,6 @@ function Notification() {
         </span>
       </div>
 
-      {/* Header Section */}
       <div className="resource-card">
         <div className="resource-topbar">
           <h2>Notifications</h2>
@@ -161,9 +183,11 @@ function Notification() {
         </div>
       </div>
 
-      {/* NEW CLASHES SECTION (FROM LOCATION STATE) */}
       {newClashes.length > 0 && (
-        <div className="resource-card" style={{ marginTop: "20px", border: "2px solid #ff4d4d" }}>
+        <div
+          className="resource-card"
+          style={{ marginTop: "20px", border: "2px solid #ff4d4d" }}
+        >
           <div className="resource-header">
             <div>
               <h3 style={{ color: "#d32f2f" }}>New Clashes Detected</h3>
@@ -173,25 +197,52 @@ function Notification() {
 
           <div className="session-stack">
             {newClashes.map((clash, index) => (
-              <div key={clash.id || index} className="session-card" style={{ marginBottom: "15px", padding: "15px", backgroundColor: "#fff5f5" }}>
-                <div className="session-module" style={{ fontWeight: "bold", fontSize: "1.1rem", marginBottom: "10px" }}>
+              <div
+                key={clash.id || index}
+                className="session-card"
+                style={{
+                  marginBottom: "15px",
+                  padding: "15px",
+                  backgroundColor: "#fff5f5",
+                }}
+              >
+                <div
+                  className="session-module"
+                  style={{ fontWeight: "bold", fontSize: "1.1rem", marginBottom: "10px" }}
+                >
                   {clash.clashType || "Clash Detected"}
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
                   <div>
                     <strong>New Session:</strong>
-                    <div className="session-info">Module: {clash.newSession?.module || "N/A"}</div>
-                    <div className="session-info">Lecturer: {clash.newSession?.lecturer || "N/A"}</div>
-                    <div className="session-info">Hall: {clash.newSession?.hall || "N/A"}</div>
-                    <div className="session-info">Time: {clash.newSession?.startTime} - {clash.newSession?.endTime}</div>
+                    <div className="session-info">
+                      Module: {clash.newSession?.module || "N/A"}
+                    </div>
+                    <div className="session-info">
+                      Lecturer: {clash.newSession?.lecturer || "N/A"}
+                    </div>
+                    <div className="session-info">
+                      Hall: {clash.newSession?.hall || "N/A"}
+                    </div>
+                    <div className="session-info">
+                      Time: {clash.newSession?.startTime} - {clash.newSession?.endTime}
+                    </div>
                   </div>
                   <div>
                     <strong>Clashing With:</strong>
-                    <div className="session-info">Module: {clash.existingSession?.module || "N/A"}</div>
-                    <div className="session-info">Lecturer: {clash.existingSession?.lecturer || "N/A"}</div>
-                    <div className="session-info">Hall: {clash.existingSession?.hall || "N/A"}</div>
-                    <div className="session-info">Time: {clash.existingSession?.startTime} - {clash.existingSession?.endTime}</div>
+                    <div className="session-info">
+                      Module: {clash.existingSession?.module || "N/A"}
+                    </div>
+                    <div className="session-info">
+                      Lecturer: {clash.existingSession?.lecturer || "N/A"}
+                    </div>
+                    <div className="session-info">
+                      Hall: {clash.existingSession?.hall || "N/A"}
+                    </div>
+                    <div className="session-info">
+                      Time: {clash.existingSession?.startTime} - {clash.existingSession?.endTime}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -200,7 +251,6 @@ function Notification() {
         </div>
       )}
 
-      {/* ALL DETECTED CLASHES SECTION */}
       <div className="resource-card" style={{ marginTop: "20px" }}>
         <div className="resource-header">
           <div>
@@ -212,31 +262,51 @@ function Notification() {
         {loading ? (
           <div className="resource-empty">Loading notifications...</div>
         ) : fetchError ? (
-          <div className="resource-empty" style={{ color: "red" }}>{fetchError}</div>
+          <div className="resource-empty" style={{ color: "red" }}>
+            {fetchError}
+          </div>
         ) : notificationList.length === 0 ? (
           <div className="resource-empty">No clash notifications found.</div>
         ) : (
           <div className="session-stack">
             {notificationList.map((item) => (
-              <div key={item.id} className="session-card" style={{ borderLeft: "5px solid #ffa000", marginBottom: "15px", padding: "15px" }}>
-                <div className="session-module" style={{ color: "#ffa000", fontWeight: "bold" }}>{item.type}</div>
+              <div
+                key={item.id}
+                className="session-card"
+                style={{ borderLeft: "5px solid #ffa000", marginBottom: "15px", padding: "15px" }}
+              >
+                <div className="session-module" style={{ color: "#ffa000", fontWeight: "bold" }}>
+                  {item.type}
+                </div>
                 <div className="session-info">
-                  <strong>Day:</strong> {item.day} | <strong>Time:</strong> {item.startTime} - {item.endTime}
+                  <strong>Day:</strong> {item.day} | <strong>Time:</strong> {item.startTime} -{" "}
+                  {item.endTime}
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginTop: "10px" }}>
-                   <div>
-                      <strong>Session 1:</strong>
-                      <div>{item.firstSession.module} ({item.firstSession.lecturer})</div>
-                      <div>Hall: {item.firstSession.hall}</div>
-                      <div>Batch / Group: {item.firstSession.batchGroup}</div>
-                   </div>
-                   <div>
-                      <strong>Session 2:</strong>
-                      <div>{item.secondSession.module} ({item.secondSession.lecturer})</div>
-                      <div>Hall: {item.secondSession.hall}</div>
-                      <div>Batch / Group: {item.secondSession.batchGroup}</div>
-                   </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "10px",
+                    marginTop: "10px",
+                  }}
+                >
+                  <div>
+                    <strong>Session 1:</strong>
+                    <div>
+                      {item.firstSession.module} ({item.firstSession.lecturer})
+                    </div>
+                    <div>Hall: {item.firstSession.hall}</div>
+                    <div>Batch / Group: {item.firstSession.batchGroup}</div>
+                  </div>
+                  <div>
+                    <strong>Session 2:</strong>
+                    <div>
+                      {item.secondSession.module} ({item.secondSession.lecturer})
+                    </div>
+                    <div>Hall: {item.secondSession.hall}</div>
+                    <div>Batch / Group: {item.secondSession.batchGroup}</div>
+                  </div>
                 </div>
               </div>
             ))}

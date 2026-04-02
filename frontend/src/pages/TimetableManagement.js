@@ -5,48 +5,64 @@ import "../styles/TimetableManagement.css";
 
 function TimetableManagementPage() {
   const [entries, setEntries] = useState([]);
+  const [batchGroups, setBatchGroups] = useState([]);
   const [filters, setFilters] = useState({
     batchGroup: "",
     status: "published",
   });
 
-  const [errors, setErrors] = useState({
-    batchGroup: "",
-  });
-
   const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
-  const validateFilters = () => {
-    const newErrors = {
-      batchGroup: "",
-    };
+  const getResourceName = (resource) => {
+    if (!resource) return "N/A";
 
-    let isValid = true;
-    const batchRegex = /^[A-Za-z0-9\s\-/.()]*$/;
+    if (typeof resource === "string") return resource;
 
-    if (filters.batchGroup && !batchRegex.test(filters.batchGroup.trim())) {
-      newErrors.batchGroup = "Batch / Group contains invalid characters";
-      isValid = false;
+    if (resource.resourceType === "lecturer") {
+      return `${resource.lecturerTitle || ""} ${resource.name}`.trim();
     }
 
-    setErrors(newErrors);
-    return isValid;
+    if (resource.resourceType === "module") {
+      return resource.code ? `${resource.code} - ${resource.name}` : resource.name;
+    }
+
+    if (resource.resourceType === "batch") {
+      return resource.batchNo ? `${resource.batchNo} - ${resource.name}` : resource.name;
+    }
+
+    if (resource.resourceType === "hall") {
+      return resource.capacity && resource.capacity > 0
+        ? `${resource.name} (Capacity: ${resource.capacity})`
+        : resource.name;
+    }
+
+    return resource.name || "N/A";
   };
 
-  const fetchEntries = async () => {
-    if (!validateFilters()) return;
+  const fetchBatchGroups = async () => {
+    try {
+      const res = await API.get("/timetable-entries/resources", {
+        params: { type: "batch" },
+      });
+      setBatchGroups(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+      console.error("Error fetching batch groups:", error);
+      setBatchGroups([]);
+    }
+  };
 
+  const fetchEntries = async (currentFilters = filters) => {
     try {
       const params = {
-        status: filters.status,
+        status: currentFilters.status,
       };
 
-      if (filters.batchGroup.trim()) {
-        params.batchGroup = filters.batchGroup.trim();
+      if (currentFilters.batchGroup) {
+        params.batchGroup = currentFilters.batchGroup;
       }
 
       const res = await API.get("/timetable-entries", { params });
-      setEntries(res.data || []);
+      setEntries(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error("Error fetching timetable entries:", error);
       setEntries([]);
@@ -54,6 +70,7 @@ function TimetableManagementPage() {
   };
 
   useEffect(() => {
+    fetchBatchGroups();
     fetchEntries();
   }, []);
 
@@ -62,39 +79,26 @@ function TimetableManagementPage() {
       ...prev,
       [field]: value,
     }));
-
-    if (field === "batchGroup") {
-      setErrors((prev) => ({
-        ...prev,
-        batchGroup: "",
-      }));
-    }
   };
 
   const handleApplyFilters = () => {
-    fetchEntries();
+    fetchEntries(filters);
   };
 
   const handleClearFilters = () => {
-    setFilters({
+    const cleared = {
       batchGroup: "",
       status: "published",
-    });
+    };
 
-    setErrors({
-      batchGroup: "",
-    });
-
-    setTimeout(() => {
-      fetchEntries();
-    }, 0);
+    setFilters(cleared);
+    fetchEntries(cleared);
   };
 
   const handlePrint = () => {
     window.print();
   };
 
-  // 🔥 NEW - Send to LIC handler
   const handleSendToLic = async () => {
     try {
       await API.put("/timetable-entries/send-to-lic");
@@ -104,7 +108,6 @@ function TimetableManagementPage() {
     }
   };
 
-  // Collect all unique time slots from fetched sessions
   const timeSlots = useMemo(() => {
     const uniqueSlots = new Map();
 
@@ -118,14 +121,11 @@ function TimetableManagementPage() {
       }
     });
 
-    const sortedSlots = Array.from(uniqueSlots.values()).sort((a, b) => {
-      return a.startTime.localeCompare(b.startTime);
-    });
-
-    return sortedSlots;
+    return Array.from(uniqueSlots.values()).sort((a, b) =>
+      a.startTime.localeCompare(b.startTime)
+    );
   }, [entries]);
 
-  // Group sessions by day and time slot
   const groupedSessions = useMemo(() => {
     const grouped = {};
 
@@ -173,16 +173,18 @@ function TimetableManagementPage() {
         <div className="resource-filter-grid single-filter-grid">
           <div className="resource-filter-box">
             <label>Batch / Group</label>
-            <input
+            <select
               className="resource-input"
-              type="text"
-              placeholder="Enter batch/group"
               value={filters.batchGroup}
               onChange={(e) => handleInputChange("batchGroup", e.target.value)}
-            />
-            {errors.batchGroup && (
-              <span className="error-text">{errors.batchGroup}</span>
-            )}
+            >
+              <option value="">All Batch / Groups</option>
+              {batchGroups.map((batch) => (
+                <option key={batch._id} value={batch._id}>
+                  {getResourceName(batch)}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -208,7 +210,6 @@ function TimetableManagementPage() {
             Print Timetable
           </button>
 
-          {/* 🔥 NEW - Send to LIC button */}
           <button className="resource-primary-btn" onClick={handleSendToLic}>
             Send to LIC
           </button>
@@ -262,18 +263,19 @@ function TimetableManagementPage() {
                                     className="session-card"
                                   >
                                     <div className="session-module">
-                                      {session.module}
+                                      {getResourceName(session.module)}
                                     </div>
                                     <div className="session-info">
                                       <strong>Lecturer:</strong>{" "}
-                                      {session.lecturer?.name || "N/A"}
+                                      {getResourceName(session.lecturer)}
                                     </div>
                                     <div className="session-info">
                                       <strong>Batch:</strong>{" "}
-                                      {session.batchGroup}
+                                      {getResourceName(session.batchGroup)}
                                     </div>
                                     <div className="session-info">
-                                      <strong>Hall:</strong> {session.hall}
+                                      <strong>Hall:</strong>{" "}
+                                      {getResourceName(session.hall)}
                                     </div>
                                     <div className="session-info">
                                       <strong>Status:</strong> {session.status}

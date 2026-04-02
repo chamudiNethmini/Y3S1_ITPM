@@ -1,5 +1,5 @@
 const TimetableEntry = require("../models/TimetableEntry");
-const User = require("../models/User");
+const Resource = require("../models/Resource");
 
 const toMinutes = (time) => {
   const [hours, minutes] = String(time || "")
@@ -42,30 +42,33 @@ const findClashes = async ({
       newStart,
       newEnd,
       existingStart,
-      existingEnd,
+      existingEnd
     );
+
     if (!overlap) return false;
 
     return (
       String(entry.lecturer) === String(lecturer) ||
-      entry.batchGroup === batchGroup ||
-      entry.hall === hall
+      String(entry.batchGroup) === String(batchGroup) ||
+      String(entry.hall) === String(hall)
     );
   });
 
   return clashes;
 };
 
-exports.getLecturers = async (req, res) => {
+// GET RESOURCES FOR SESSION DROPDOWNS
+exports.getSessionResources = async (req, res) => {
   try {
-    const lecturers = await User.find({
-      role: "lic",
-      status: "active",
-    }).select("_id name email");
+    const { type } = req.query;
 
-    res.json(lecturers);
+    const filter = type ? { resourceType: type } : {};
+
+    const resources = await Resource.find(filter).sort({ createdAt: -1 });
+
+    res.json(resources);
   } catch (error) {
-    res.status(500).json({ message: "Failed to fetch lecturers" });
+    res.status(500).json({ message: "Failed to fetch resources" });
   }
 };
 
@@ -107,9 +110,40 @@ exports.createTimetableEntry = async (req, res) => {
         .json({ message: "End time must be after start time" });
     }
 
-    const lecturerUser = await User.findById(lecturer);
-    if (!lecturerUser || lecturerUser.role !== "lic") {
+    const moduleResource = await Resource.findOne({
+      _id: module,
+      resourceType: "module",
+    });
+
+    const lecturerResource = await Resource.findOne({
+      _id: lecturer,
+      resourceType: "lecturer",
+    });
+
+    const batchResource = await Resource.findOne({
+      _id: batchGroup,
+      resourceType: "batch",
+    });
+
+    const hallResource = await Resource.findOne({
+      _id: hall,
+      resourceType: "hall",
+    });
+
+    if (!moduleResource) {
+      return res.status(400).json({ message: "Invalid module selected" });
+    }
+
+    if (!lecturerResource) {
       return res.status(400).json({ message: "Invalid lecturer selected" });
+    }
+
+    if (!batchResource) {
+      return res.status(400).json({ message: "Invalid batch selected" });
+    }
+
+    if (!hallResource) {
+      return res.status(400).json({ message: "Invalid hall selected" });
     }
 
     const clashes = await findClashes({
@@ -141,7 +175,10 @@ exports.createTimetableEntry = async (req, res) => {
     });
 
     const populated = await TimetableEntry.findById(entry._id)
-      .populate("lecturer", "name email")
+      .populate("module")
+      .populate("lecturer")
+      .populate("batchGroup")
+      .populate("hall")
       .populate("createdBy", "name email");
 
     res.status(201).json(populated);
@@ -156,20 +193,17 @@ exports.getTimetableEntries = async (req, res) => {
 
     const filter = {};
 
-    if (req.user.role === "lic") {
-      filter.lecturer = req.user.id;
-      filter.status = "published";
-    } else {
-      if (status) filter.status = status;
-      if (lecturer) filter.lecturer = lecturer;
-    }
-
+    if (status) filter.status = status;
+    if (lecturer) filter.lecturer = lecturer;
+    if (batchGroup) filter.batchGroup = batchGroup;
+    if (hall) filter.hall = hall;
     if (day) filter.day = day;
-    if (batchGroup) filter.batchGroup = new RegExp(batchGroup, "i");
-    if (hall) filter.hall = new RegExp(hall, "i");
 
     const entries = await TimetableEntry.find(filter)
-      .populate("lecturer", "name email")
+      .populate("module")
+      .populate("lecturer")
+      .populate("batchGroup")
+      .populate("hall")
       .populate("createdBy", "name email")
       .sort({ day: 1, startTime: 1 });
 
@@ -217,14 +251,45 @@ exports.updateTimetableEntry = async (req, res) => {
         .json({ message: "End time must be after start time" });
     }
 
-    const lecturerUser = await User.findById(lecturer);
-    if (!lecturerUser || lecturerUser.role !== "lic") {
-      return res.status(400).json({ message: "Invalid lecturer selected" });
-    }
-
     const existing = await TimetableEntry.findById(req.params.id);
     if (!existing) {
       return res.status(404).json({ message: "Session not found" });
+    }
+
+    const moduleResource = await Resource.findOne({
+      _id: module,
+      resourceType: "module",
+    });
+
+    const lecturerResource = await Resource.findOne({
+      _id: lecturer,
+      resourceType: "lecturer",
+    });
+
+    const batchResource = await Resource.findOne({
+      _id: batchGroup,
+      resourceType: "batch",
+    });
+
+    const hallResource = await Resource.findOne({
+      _id: hall,
+      resourceType: "hall",
+    });
+
+    if (!moduleResource) {
+      return res.status(400).json({ message: "Invalid module selected" });
+    }
+
+    if (!lecturerResource) {
+      return res.status(400).json({ message: "Invalid lecturer selected" });
+    }
+
+    if (!batchResource) {
+      return res.status(400).json({ message: "Invalid batch selected" });
+    }
+
+    if (!hallResource) {
+      return res.status(400).json({ message: "Invalid hall selected" });
     }
 
     const clashes = await findClashes({
@@ -256,9 +321,12 @@ exports.updateTimetableEntry = async (req, res) => {
         endTime,
         status: status || existing.status,
       },
-      { new: true, runValidators: true },
+      { new: true, runValidators: true }
     )
-      .populate("lecturer", "name email")
+      .populate("module")
+      .populate("lecturer")
+      .populate("batchGroup")
+      .populate("hall")
       .populate("createdBy", "name email");
 
     res.json(updated);
@@ -310,7 +378,10 @@ exports.publishTimetableEntry = async (req, res) => {
     await entry.save();
 
     const populated = await TimetableEntry.findById(entry._id)
-      .populate("lecturer", "name email")
+      .populate("module")
+      .populate("lecturer")
+      .populate("batchGroup")
+      .populate("hall")
       .populate("createdBy", "name email");
 
     res.json(populated);
@@ -319,7 +390,7 @@ exports.publishTimetableEntry = async (req, res) => {
   }
 };
 
-// ================= SEND TO LIC =================
+// SEND TO LIC
 exports.sendToLic = async (req, res) => {
   try {
     await TimetableEntry.updateMany({ status: "draft" }, { status: "sent" });
@@ -329,11 +400,14 @@ exports.sendToLic = async (req, res) => {
   }
 };
 
-// ================= GET LIC TIMETABLE ================= 🔥 NEW
+// GET LIC TIMETABLE
 exports.getLicTimetable = async (req, res) => {
   try {
     const data = await TimetableEntry.find({ status: "sent" })
-      .populate("lecturer", "name email")
+      .populate("module")
+      .populate("lecturer")
+      .populate("batchGroup")
+      .populate("hall")
       .populate("createdBy", "name email")
       .sort({ day: 1, startTime: 1 });
 
