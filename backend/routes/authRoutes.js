@@ -13,15 +13,11 @@ const {
   deleteUser,
   getAuditLogs,
   forgotPassword,
-  resetPassword
+  resetPassword,
 } = require("../controllers/authController");
 
 // ================= MIDDLEWARE =================
-const {
-  verifyToken,
-  authorizeRoles
-} = require("../middleware/authMiddleware");
-
+const { verifyToken, authorizeRoles } = require("../middleware/authMiddleware");
 
 // ================= PUBLIC ROUTES =================
 
@@ -34,7 +30,6 @@ router.post("/forgot-password", forgotPassword);
 // Reset Password
 router.post("/reset-password", resetPassword);
 
-
 // ================= AUTHENTICATED USER ROUTES =================
 
 // Get Profile (any authenticated user)
@@ -43,23 +38,17 @@ router.get("/profile", verifyToken, getProfile);
 // Change Password (any authenticated user)
 router.put("/change-password", verifyToken, changePassword);
 
-
 // ================= ADMIN ONLY ROUTES =================
 
 // Create user
-router.post(
-  "/create-user",
-  verifyToken,
-  authorizeRoles("admin"),
-  createUser
-);
+router.post("/create-user", verifyToken, authorizeRoles("admin"), createUser);
 
 // Get all users
 router.get(
   "/all-users",
   verifyToken,
-  authorizeRoles("admin"),
-  getAllUsers
+  authorizeRoles("admin", "coordinator", "lic"),
+  getAllUsers,
 );
 
 // Update user status
@@ -67,7 +56,7 @@ router.put(
   "/update-status/:id",
   verifyToken,
   authorizeRoles("admin"),
-  updateUserStatus
+  updateUserStatus,
 );
 
 // Update user role
@@ -75,7 +64,7 @@ router.put(
   "/update-role/:id",
   verifyToken,
   authorizeRoles("admin"),
-  updateUserRole
+  updateUserRole,
 );
 
 // Delete user
@@ -83,16 +72,10 @@ router.delete(
   "/delete-user/:id",
   verifyToken,
   authorizeRoles("admin"),
-  deleteUser
+  deleteUser,
 );
 
 // Audit Logs (Admin only)
-router.get(
-  "/audit-logs",
-  verifyToken,
-  authorizeRoles("admin"),
-  getAuditLogs
-);
-
+router.get("/audit-logs", verifyToken, authorizeRoles("admin"), getAuditLogs);
 
 module.exports = router;

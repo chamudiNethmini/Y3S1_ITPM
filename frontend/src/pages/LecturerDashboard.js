@@ -421,11 +421,13 @@ function LecturerDashboard() {
                 ) : timetable.length > 0 ? (
                   timetable.map((item) => (
                     <tr key={item._id}>
-                      <td>{item.moduleCode}</td>
-                      <td>{item.subject}</td>
+                      <td>{item.module?.code || "-"}</td>
+                      <td>{item.module?.name || "-"}</td>
                       <td>{item.day}</td>
-                      <td>{item.time}</td>
-                      <td>{item.hall}</td>
+                      <td>
+                        {item.startTime} - {item.endTime}
+                      </td>
+                      <td>{item.hall?.name || "-"}</td>
 
                       <td>
                         <select

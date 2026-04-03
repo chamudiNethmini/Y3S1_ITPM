@@ -42,7 +42,7 @@ const findClashes = async ({
       newStart,
       newEnd,
       existingStart,
-      existingEnd
+      existingEnd,
     );
 
     if (!overlap) return false;
@@ -321,7 +321,7 @@ exports.updateTimetableEntry = async (req, res) => {
         endTime,
         status: status || existing.status,
       },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     )
       .populate("module")
       .populate("lecturer")
@@ -403,7 +403,11 @@ exports.sendToLic = async (req, res) => {
 // GET LIC TIMETABLE
 exports.getLicTimetable = async (req, res) => {
   try {
-    const data = await TimetableEntry.find({ status: "sent" })
+    console.log("LIC API HIT"); // debug
+
+    const data = await TimetableEntry.find({
+      status: { $in: ["sent", "published"] },
+    })
       .populate("module")
       .populate("lecturer")
       .populate("batchGroup")
@@ -413,6 +417,7 @@ exports.getLicTimetable = async (req, res) => {
 
     res.json(data);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
