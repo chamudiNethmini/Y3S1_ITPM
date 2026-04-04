@@ -555,6 +555,22 @@ function LecturerDashboard() {
     return resource.name || "N/A";
   };
 
+  const lecturerOptions = useMemo(
+    () =>
+      lecturers.map((resource) => ({
+        id: resource._id,
+        label: getResourceName(resource),
+      })),
+    [lecturers],
+  );
+
+  const getFilteredForSession = (id) => {
+    const q = (sessionSearch[id] || "").toLowerCase();
+    return lecturerOptions.filter((item) =>
+      item.label.toLowerCase().includes(q),
+    );
+  };
+
   // ── Workload ────────────────────────────────────────────────────────────────
   const calculateRemainingHours = (lecturerId) => {
     const lec = lecturers.find((l) => l._id === lecturerId);
@@ -563,25 +579,53 @@ function LecturerDashboard() {
   };
 
   // ── Assignment ──────────────────────────────────────────────────────────────
-  const handleAssignChange = (id, name) => {
-    setAssignments((prev) => ({ ...prev, [id]: name }));
+  const handleAssignChange = (id, lecturer) => {
+    setAssignments((prev) => ({ ...prev, [id]: lecturer }));
     setOpenDropdown(null);
     setSessionSearch((prev) => ({ ...prev, [id]: "" }));
   };
 
   const handleSave = async (id) => {
-    const lecturerName = assignments[id];
-    if (!lecturerName) {
+    const selectedLecturer = assignments[id];
+    if (!selectedLecturer?.id) {
       alert("Please select a lecturer");
       return;
     }
+
+    const entry = timetable.find((item) => item._id === id);
+    if (!entry) {
+      alert("Session not found");
+      return;
+    }
+
     try {
-      await API.put(`/timetable/assign/${id}`, { lecturerName });
+      await API.put(`/timetable/${id}`, {
+        module: entry.module?._id || entry.module,
+        lecturer: selectedLecturer.id,
+        batchGroup: entry.batchGroup?._id || entry.batchGroup,
+        hall: entry.hall?._id || entry.hall,
+        day: entry.day,
+        startTime: entry.startTime,
+        endTime: entry.endTime,
+        status: entry.status || "draft",
+      });
       alert("Lecturer assigned successfully ✅");
       fetchTimetable();
       fetchLecturers();
-    } catch {
-      alert("Failed to assign lecturer");
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to assign lecturer");
+    }
+  };
+
+  const handleSendToAdmin = async () => {
+    try {
+      await API.put("/timetable/send-to-admin");
+      alert("Timetable sent to Admin successfully ✅");
+      fetchTimetable();
+    } catch (error) {
+      alert(
+        error.response?.data?.message || "Failed to send timetable to admin",
+      );
     }
   };
 
@@ -612,11 +656,6 @@ function LecturerDashboard() {
   }, []);
 
   // ── Searchable dropdown per session ────────────────────────────────────────
-  const getFilteredForSession = (id) => {
-    const q = (sessionSearch[id] || "").toLowerCase();
-    return staticLecturerNames.filter((n) => n.toLowerCase().includes(q));
-  };
-
   return (
     <>
       <Navbar />
@@ -643,6 +682,24 @@ function LecturerDashboard() {
           <div className="stat-card stat-yellow">
             <span className="stat-title">Available Halls</span>
             <h2>{locations.length}</h2>
+          </div>
+        </div>
+
+        {/* SEND TO ADMIN */}
+        <div className="lecturer-card">
+          <div className="section-header">
+            <div>
+              <h3>Send Timetable to Admin</h3>
+              <p>
+                After assigning lecturers, send the timetable back to admin for
+                final review and publishing.
+              </p>
+            </div>
+          </div>
+          <div className="action-row">
+            <button className="primary-btn" onClick={handleSendToAdmin}>
+              Send to Admin
+            </button>
           </div>
         </div>
 
@@ -865,7 +922,8 @@ function LecturerDashboard() {
                                   <div className="session-stack">
                                     {sessions.map((session) => {
                                       const sid = session._id;
-                                      const chosen = assignments[sid] || "";
+                                      const chosen =
+                                        assignments[sid]?.label || "";
                                       const isOpen = openDropdown === sid;
                                       const filtered =
                                         getFilteredForSession(sid);
@@ -956,13 +1014,13 @@ function LecturerDashboard() {
                                                 }}
                                               >
                                                 {filtered.length > 0 ? (
-                                                  filtered.map((name) => (
+                                                  filtered.map((lecturer) => (
                                                     <div
-                                                      key={name}
+                                                      key={lecturer.id}
                                                       onClick={() =>
                                                         handleAssignChange(
                                                           sid,
-                                                          name,
+                                                          lecturer,
                                                         )
                                                       }
                                                       style={{
@@ -981,7 +1039,7 @@ function LecturerDashboard() {
                                                           "#fff")
                                                       }
                                                     >
-                                                      {name}
+                                                      {lecturer.label}
                                                     </div>
                                                   ))
                                                 ) : (
