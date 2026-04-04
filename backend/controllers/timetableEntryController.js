@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const TimetableEntry = require("../models/TimetableEntry");
 const Resource = require("../models/Resource");
 const AuditLog = require("../models/AuditLog");
@@ -194,11 +195,19 @@ exports.getTimetableEntries = async (req, res) => {
 
     const filter = {};
 
-    if (status) filter.status = status;
+    if (status) {
+      if (typeof status === "string" && status.includes(",")) {
+        filter.status = { $in: status.split(",").map((s) => s.trim()) };
+      } else {
+        filter.status = status;
+      }
+    }
     if (lecturer) filter.lecturer = lecturer;
     if (batchGroup) filter.batchGroup = batchGroup;
     if (hall) filter.hall = hall;
     if (day) filter.day = day;
+
+    console.log("getTimetableEntries query filter:", filter);
 
     const entries = await TimetableEntry.find(filter)
       .populate("module")
@@ -208,6 +217,10 @@ exports.getTimetableEntries = async (req, res) => {
       .populate("createdBy", "name email")
       .sort({ day: 1, startTime: 1 });
 
+    console.log(
+      `Found ${entries.length} timetable entries with filter:`,
+      filter,
+    );
     res.json(entries);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch timetable entries" });
@@ -435,9 +448,33 @@ exports.sendToLic = async (req, res) => {
 // SEND TO ADMIN
 exports.sendToAdmin = async (req, res) => {
   try {
-    await TimetableEntry.updateMany({ status: "sent" }, { status: "assigned" });
+    const { batchGroup } = req.body;
+
+    const filter = { status: { $in: ["sent", "draft"] } };
+
+    if (batchGroup) {
+      let batchId = batchGroup;
+
+      if (!mongoose.Types.ObjectId.isValid(batchGroup)) {
+        const batchResource = await Resource.findOne({
+          resourceType: "batch",
+          $or: [{ batchNo: batchGroup }, { name: batchGroup }],
+        });
+
+        if (!batchResource) {
+          return res.status(400).json({ message: "Invalid batch selected" });
+        }
+
+        batchId = batchResource._id;
+      }
+
+      filter.batchGroup = batchId;
+    }
+
+    await TimetableEntry.updateMany(filter, { status: "assigned" });
     res.json({ message: "Timetable sent to Admin" });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };

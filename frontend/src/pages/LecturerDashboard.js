@@ -618,8 +618,12 @@ function LecturerDashboard() {
   };
 
   const handleSendToAdmin = async () => {
+    if (!selectedBatch) {
+      alert("Please select a batch to send");
+      return;
+    }
     try {
-      await API.put("/timetable/send-to-admin");
+      await API.put("/timetable/send-to-admin", { batchGroup: selectedBatch });
       alert("Timetable sent to Admin successfully ✅");
       fetchTimetable();
     } catch (error) {
@@ -686,22 +690,24 @@ function LecturerDashboard() {
         </div>
 
         {/* SEND TO ADMIN */}
-        <div className="lecturer-card">
-          <div className="section-header">
-            <div>
-              <h3>Send Timetable to Admin</h3>
-              <p>
-                After assigning lecturers, send the timetable back to admin for
-                final review and publishing.
-              </p>
+        {selectedBatch && filteredTimetable.length > 0 && (
+          <div className="lecturer-card">
+            <div className="section-header">
+              <div>
+                <h3>Send Timetable to Admin</h3>
+                <p>
+                  After assigning lecturers, send the timetable back to admin
+                  for final review and publishing.
+                </p>
+              </div>
+            </div>
+            <div className="action-row">
+              <button className="primary-btn" onClick={handleSendToAdmin}>
+                Send LIC Timetable to Admin
+              </button>
             </div>
           </div>
-          <div className="action-row">
-            <button className="primary-btn" onClick={handleSendToAdmin}>
-              Send to Admin
-            </button>
-          </div>
-        </div>
+        )}
 
         {/* TICKET */}
         <div className="lecturer-card">
@@ -876,6 +882,15 @@ function LecturerDashboard() {
                 style={{ padding: "6px 14px", fontSize: "13px" }}
               >
                 Clear Filter
+              </button>
+            )}
+            {selectedBatch && filteredTimetable.length > 0 && (
+              <button
+                className="primary-btn"
+                onClick={handleSendToAdmin}
+                style={{ padding: "8px 16px", fontSize: "13px" }}
+              >
+                Send LIC Timetable to Admin
               </button>
             )}
             {selectedBatch && (

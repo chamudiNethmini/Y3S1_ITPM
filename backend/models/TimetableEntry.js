@@ -44,7 +44,7 @@ const timetableEntrySchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["draft", "sent", "published"],
+      enum: ["draft", "sent", "assigned", "published"],
       default: "draft",
     },
     createdBy: {
@@ -53,7 +53,7 @@ const timetableEntrySchema = new mongoose.Schema(
       required: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("TimetableEntry", timetableEntrySchema);
