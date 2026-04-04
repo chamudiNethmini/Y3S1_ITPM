@@ -8,14 +8,14 @@ router.get(
   "/resources",
   verifyToken,
   authorizeRoles("admin", "coordinator"),
-  timetableEntryController.getSessionResources
+  timetableEntryController.getSessionResources,
 );
 
 router.get(
   "/lic",
   verifyToken,
   authorizeRoles("lic"),
-  timetableEntryController.getLicTimetable
+  timetableEntryController.getLicTimetable,
 );
 
 router.get("/", verifyToken, timetableEntryController.getTimetableEntries);
@@ -24,35 +24,49 @@ router.post(
   "/",
   verifyToken,
   authorizeRoles("admin", "coordinator"),
-  timetableEntryController.createTimetableEntry
+  timetableEntryController.createTimetableEntry,
 );
 
 router.put(
   "/send-to-lic",
   verifyToken,
   authorizeRoles("coordinator"),
-  timetableEntryController.sendToLic
+  timetableEntryController.sendToLic,
+);
+
+router.put(
+  "/send-to-admin",
+  verifyToken,
+  authorizeRoles("lic"),
+  timetableEntryController.sendToAdmin,
 );
 
 router.put(
   "/:id",
   verifyToken,
-  authorizeRoles("admin", "coordinator"),
-  timetableEntryController.updateTimetableEntry
+  authorizeRoles("admin", "coordinator", "lic"),
+  timetableEntryController.updateTimetableEntry,
 );
 
 router.delete(
   "/:id",
   verifyToken,
   authorizeRoles("admin", "coordinator"),
-  timetableEntryController.deleteTimetableEntry
+  timetableEntryController.deleteTimetableEntry,
 );
 
 router.patch(
   "/:id/publish",
   verifyToken,
   authorizeRoles("admin", "coordinator"),
-  timetableEntryController.publishTimetableEntry
+  timetableEntryController.publishTimetableEntry,
+);
+
+router.post(
+  "/publish",
+  verifyToken,
+  authorizeRoles("admin", "coordinator"),
+  timetableEntryController.publishAllTimetable,
 );
 
 module.exports = router;

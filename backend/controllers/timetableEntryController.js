@@ -1,5 +1,7 @@
+const mongoose = require("mongoose");
 const TimetableEntry = require("../models/TimetableEntry");
 const Resource = require("../models/Resource");
+const AuditLog = require("../models/AuditLog");
 
 const toMinutes = (time) => {
   const [hours, minutes] = String(time || "")
@@ -193,11 +195,19 @@ exports.getTimetableEntries = async (req, res) => {
 
     const filter = {};
 
-    if (status) filter.status = status;
+    if (status) {
+      if (typeof status === "string" && status.includes(",")) {
+        filter.status = { $in: status.split(",").map((s) => s.trim()) };
+      } else {
+        filter.status = status;
+      }
+    }
     if (lecturer) filter.lecturer = lecturer;
     if (batchGroup) filter.batchGroup = batchGroup;
     if (hall) filter.hall = hall;
     if (day) filter.day = day;
+
+    console.log("getTimetableEntries query filter:", filter);
 
     const entries = await TimetableEntry.find(filter)
       .populate("module")
@@ -207,6 +217,10 @@ exports.getTimetableEntries = async (req, res) => {
       .populate("createdBy", "name email")
       .sort({ day: 1, startTime: 1 });
 
+    console.log(
+      `Found ${entries.length} timetable entries with filter:`,
+      filter,
+    );
     res.json(entries);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch timetable entries" });
@@ -226,79 +240,96 @@ exports.updateTimetableEntry = async (req, res) => {
       status,
     } = req.body;
 
-    if (
-      !module ||
-      !lecturer ||
-      !batchGroup ||
-      !hall ||
-      !day ||
-      !startTime ||
-      !endTime
-    ) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-
-    const start = toMinutes(startTime);
-    const end = toMinutes(endTime);
-
-    if (start === null || end === null) {
-      return res.status(400).json({ message: "Invalid time format" });
-    }
-
-    if (start >= end) {
-      return res
-        .status(400)
-        .json({ message: "End time must be after start time" });
-    }
-
     const existing = await TimetableEntry.findById(req.params.id);
     if (!existing) {
       return res.status(404).json({ message: "Session not found" });
     }
 
-    const moduleResource = await Resource.findOne({
-      _id: module,
-      resourceType: "module",
-    });
+    const updateData = {};
+    if (module !== undefined && module !== null) updateData.module = module;
+    if (lecturer !== undefined && lecturer !== null)
+      updateData.lecturer = lecturer;
+    if (batchGroup !== undefined && batchGroup !== null)
+      updateData.batchGroup = batchGroup;
+    if (hall !== undefined && hall !== null) updateData.hall = hall;
+    if (day !== undefined && day !== null) updateData.day = day;
+    if (startTime !== undefined && startTime !== null)
+      updateData.startTime = startTime;
+    if (endTime !== undefined && endTime !== null) updateData.endTime = endTime;
+    if (status !== undefined && status !== null) updateData.status = status;
 
-    const lecturerResource = await Resource.findOne({
-      _id: lecturer,
-      resourceType: "lecturer",
-    });
-
-    const batchResource = await Resource.findOne({
-      _id: batchGroup,
-      resourceType: "batch",
-    });
-
-    const hallResource = await Resource.findOne({
-      _id: hall,
-      resourceType: "hall",
-    });
-
-    if (!moduleResource) {
-      return res.status(400).json({ message: "Invalid module selected" });
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ message: "No fields to update" });
     }
 
-    if (!lecturerResource) {
-      return res.status(400).json({ message: "Invalid lecturer selected" });
+    // Validate provided fields
+    if (updateData.module) {
+      const moduleResource = await Resource.findOne({
+        _id: updateData.module,
+        resourceType: "module",
+      });
+      if (!moduleResource) {
+        return res.status(400).json({ message: "Invalid module selected" });
+      }
     }
 
-    if (!batchResource) {
-      return res.status(400).json({ message: "Invalid batch selected" });
+    if (updateData.lecturer) {
+      const lecturerResource = await Resource.findOne({
+        _id: updateData.lecturer,
+        resourceType: "lecturer",
+      });
+      if (!lecturerResource) {
+        return res.status(400).json({ message: "Invalid lecturer selected" });
+      }
     }
 
-    if (!hallResource) {
-      return res.status(400).json({ message: "Invalid hall selected" });
+    if (updateData.batchGroup) {
+      const batchResource = await Resource.findOne({
+        _id: updateData.batchGroup,
+        resourceType: "batch",
+      });
+      if (!batchResource) {
+        return res.status(400).json({ message: "Invalid batch selected" });
+      }
     }
 
+    if (updateData.hall) {
+      const hallResource = await Resource.findOne({
+        _id: updateData.hall,
+        resourceType: "hall",
+      });
+      if (!hallResource) {
+        return res.status(400).json({ message: "Invalid hall selected" });
+      }
+    }
+
+    if (updateData.startTime || updateData.endTime) {
+      const finalStartTime = updateData.startTime || existing.startTime;
+      const finalEndTime = updateData.endTime || existing.endTime;
+
+      const start = toMinutes(finalStartTime);
+      const end = toMinutes(finalEndTime);
+
+      if (start === null || end === null) {
+        return res.status(400).json({ message: "Invalid time format" });
+      }
+
+      if (start >= end) {
+        return res
+          .status(400)
+          .json({ message: "End time must be after start time" });
+      }
+    }
+
+    // Check for clashes using final data
+    const finalData = { ...existing.toObject(), ...updateData };
     const clashes = await findClashes({
-      lecturer,
-      batchGroup,
-      hall,
-      day,
-      startTime,
-      endTime,
+      lecturer: finalData.lecturer,
+      batchGroup: finalData.batchGroup,
+      hall: finalData.hall,
+      day: finalData.day,
+      startTime: finalData.startTime,
+      endTime: finalData.endTime,
       excludeId: req.params.id,
     });
 
@@ -311,16 +342,7 @@ exports.updateTimetableEntry = async (req, res) => {
 
     const updated = await TimetableEntry.findByIdAndUpdate(
       req.params.id,
-      {
-        module,
-        lecturer,
-        batchGroup,
-        hall,
-        day,
-        startTime,
-        endTime,
-        status: status || existing.status,
-      },
+      updateData,
       { new: true, runValidators: true },
     )
       .populate("module")
@@ -390,6 +412,29 @@ exports.publishTimetableEntry = async (req, res) => {
   }
 };
 
+// PUBLISH ALL TIMETABLE
+exports.publishAllTimetable = async (req, res) => {
+  try {
+    const { message } = req.body;
+
+    // Update all assigned entries to published
+    await TimetableEntry.updateMany(
+      { status: "assigned" },
+      { status: "published" },
+    );
+
+    // AUDIT LOG
+    await AuditLog.create({
+      action: `Timetable published: ${message}`,
+      performedBy: req.user.id,
+    });
+
+    res.json({ message: "Timetable published successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to publish timetable" });
+  }
+};
+
 // SEND TO LIC
 exports.sendToLic = async (req, res) => {
   try {
@@ -400,13 +445,47 @@ exports.sendToLic = async (req, res) => {
   }
 };
 
+// SEND TO ADMIN
+exports.sendToAdmin = async (req, res) => {
+  try {
+    const { batchGroup } = req.body;
+
+    const filter = { status: { $in: ["sent", "draft"] } };
+
+    if (batchGroup) {
+      let batchId = batchGroup;
+
+      if (!mongoose.Types.ObjectId.isValid(batchGroup)) {
+        const batchResource = await Resource.findOne({
+          resourceType: "batch",
+          $or: [{ batchNo: batchGroup }, { name: batchGroup }],
+        });
+
+        if (!batchResource) {
+          return res.status(400).json({ message: "Invalid batch selected" });
+        }
+
+        batchId = batchResource._id;
+      }
+
+      filter.batchGroup = batchId;
+    }
+
+    await TimetableEntry.updateMany(filter, { status: "assigned" });
+    res.json({ message: "Timetable sent to Admin" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 // GET LIC TIMETABLE
 exports.getLicTimetable = async (req, res) => {
   try {
     console.log("LIC API HIT"); // debug
 
     const data = await TimetableEntry.find({
-      status: { $in: ["sent", "published"] },
+      status: { $in: ["sent", "assigned", "published"] },
     })
       .populate("module")
       .populate("lecturer")

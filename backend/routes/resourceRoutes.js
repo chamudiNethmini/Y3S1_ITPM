@@ -9,15 +9,22 @@ const {
   deleteResource,
 } = require("../controllers/resourceController");
 
-const {
-  verifyToken,
-  authorizeRoles,
-} = require("../middleware/authMiddleware");
+const { verifyToken, authorizeRoles } = require("../middleware/authMiddleware");
 
 router.post("/", verifyToken, authorizeRoles("coordinator"), createResource);
-router.get("/", verifyToken, authorizeRoles("coordinator"), getAllResources);
+router.get(
+  "/",
+  verifyToken,
+  authorizeRoles("admin", "coordinator", "lic"),
+  getAllResources,
+);
 router.get("/:id", verifyToken, authorizeRoles("coordinator"), getResourceById);
 router.put("/:id", verifyToken, authorizeRoles("coordinator"), updateResource);
-router.delete("/:id", verifyToken, authorizeRoles("coordinator"), deleteResource);
+router.delete(
+  "/:id",
+  verifyToken,
+  authorizeRoles("coordinator"),
+  deleteResource,
+);
 
 module.exports = router;

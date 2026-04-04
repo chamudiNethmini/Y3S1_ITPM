@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import API from "../services/api";
 import { useNavigate } from "react-router-dom";
 import "../styles/AdminDashboard.css";
@@ -20,6 +20,8 @@ function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("all");
   const [moduleSearch, setModuleSearch] = useState("");
+  const [timetable, setTimetable] = useState([]);
+  const [selectedTimetableBatch, setSelectedTimetableBatch] = useState("");
 
   // PUBLISH TIMETABLE STATE
   const [publishMessage, setPublishMessage] = useState("");
@@ -242,12 +244,12 @@ function AdminDashboard() {
     "SE3102 - RM",
     "SE3072 - IT",
     "SE2020 - WMT",
-    "IT2150 - ITP"
+    "IT2150 - ITP",
   ];
 
   // Filter module codes based on search
   const filteredModules = moduleCodes.filter((module) =>
-    module.toLowerCase().includes(moduleSearch.toLowerCase())
+    module.toLowerCase().includes(moduleSearch.toLowerCase()),
   );
 
   // ================= FETCH =================
@@ -279,6 +281,69 @@ function AdminDashboard() {
     }
   };
 
+  const fetchTimetable = async () => {
+    try {
+      const res = await API.get("/timetable");
+      console.log("Fetched ALL timetable entries:", res.data);
+      setTimetable(res.data);
+    } catch (error) {
+      console.log("Error fetching timetable:", error);
+    }
+  };
+
+  const batchOptions = useMemo(() => {
+    return [
+      ...new Set(
+        timetable
+          .map((entry) => {
+            if (!entry.batchGroup) return "";
+            return (
+              (typeof entry.batchGroup === "string"
+                ? entry.batchGroup
+                : entry.batchGroup.batchNo || entry.batchGroup.name || "") || ""
+            );
+          })
+          .filter(Boolean),
+      ),
+    ];
+  }, [timetable]);
+
+  const filteredTimetable = useMemo(() => {
+    if (!selectedTimetableBatch) return timetable;
+    return timetable.filter((entry) => {
+      const batchName =
+        typeof entry.batchGroup === "string"
+          ? entry.batchGroup
+          : entry.batchGroup?.batchNo || entry.batchGroup?.name || "";
+      return batchName === selectedTimetableBatch;
+    });
+  }, [timetable, selectedTimetableBatch]);
+
+  const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+
+  const timeSlots = useMemo(() => {
+    const unique = new Map();
+    filteredTimetable.forEach((entry) => {
+      const key = `${entry.startTime}-${entry.endTime}`;
+      if (!unique.has(key))
+        unique.set(key, { startTime: entry.startTime, endTime: entry.endTime });
+    });
+    return Array.from(unique.values()).sort((a, b) =>
+      a.startTime.localeCompare(b.startTime),
+    );
+  }, [filteredTimetable]);
+
+  const groupedByDayAndSlot = useMemo(() => {
+    const grouped = {};
+    filteredTimetable.forEach((entry) => {
+      if (!grouped[entry.day]) grouped[entry.day] = {};
+      const slotKey = `${entry.startTime}-${entry.endTime}`;
+      if (!grouped[entry.day][slotKey]) grouped[entry.day][slotKey] = [];
+      grouped[entry.day][slotKey].push(entry);
+    });
+    return grouped;
+  }, [filteredTimetable]);
+
   const handleReplyTicket = async (ticketId) => {
     const reply = ticketReply[ticketId]?.trim();
     if (!reply) {
@@ -299,6 +364,11 @@ function AdminDashboard() {
     fetchUsers();
     fetchAuditLogs();
     fetchTickets();
+    fetchTimetable();
+    const interval = setInterval(() => {
+      fetchTimetable();
+    }, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   // ================= CREATE USER =================
@@ -333,7 +403,7 @@ function AdminDashboard() {
         email,
         password,
         role,
-        moduleCode: role === "lic" ? moduleCode : undefined
+        moduleCode: role === "lic" ? moduleCode : undefined,
       });
 
       alert("User created successfully");
@@ -347,7 +417,6 @@ function AdminDashboard() {
 
       fetchUsers();
       fetchAuditLogs();
-
     } catch (error) {
       alert(error.response?.data?.message || "Error creating user");
     }
@@ -368,13 +437,12 @@ function AdminDashboard() {
 
     try {
       await API.post("/timetable/publish", {
-        message: publishMessage
+        message: publishMessage,
       });
 
       alert("Timetable published successfully ✅");
       setPublishMessage("");
       fetchAuditLogs();
-
     } catch (error) {
       alert(error.response?.data?.message || "Failed to publish timetable");
     }
@@ -384,7 +452,7 @@ function AdminDashboard() {
 
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm(
-      "Are you sure you want to delete this user?"
+      "Are you sure you want to delete this user?",
     );
 
     if (!confirmDelete) return;
@@ -437,7 +505,7 @@ function AdminDashboard() {
   const activeUsers = users.filter((user) => user.status === "active").length;
 
   const suspendedUsers = users.filter(
-    (user) => user.status === "suspended"
+    (user) => user.status === "suspended",
   ).length;
 
   // ================= UI =================
@@ -584,10 +652,11 @@ function AdminDashboard() {
                   <td>{user.email}</td>
                   <td>{user.role}</td>
                   <td>
-                    {user.role === "lic" 
-                      ? (user.moduleCode || <span className="not-assigned">Not Assigned</span>) 
-                      : "-"
-                    }
+                    {user.role === "lic"
+                      ? user.moduleCode || (
+                          <span className="not-assigned">Not Assigned</span>
+                        )
+                      : "-"}
                   </td>
                   <td>
                     <span className={`status ${user.status}`}>
@@ -625,6 +694,154 @@ function AdminDashboard() {
           </table>
         </div>
 
+        {/* LIC TIMETABLE GRID VIEW */}
+        <div className="admin-card">
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "15px",
+            }}
+          >
+            <h3>LIC Timetable Grid ({filteredTimetable.length})</h3>
+            <select
+              value={selectedTimetableBatch}
+              onChange={(e) => setSelectedTimetableBatch(e.target.value)}
+              style={{
+                padding: "8px 12px",
+                borderRadius: "5px",
+                border: "1px solid #ddd",
+                fontSize: "14px",
+                cursor: "pointer",
+              }}
+            >
+              <option value="">All Batches</option>
+              {batchOptions.map((batch) => (
+                <option key={batch} value={batch}>
+                  {batch}
+                </option>
+              ))}
+            </select>
+          </div>
+          {filteredTimetable.length === 0 ? (
+            <p style={{ color: "#888" }}>No timetable entries.</p>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table
+                className="lic-table"
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  fontSize: "12px",
+                }}
+              >
+                <thead>
+                  <tr style={{ backgroundColor: "#f5f5f5" }}>
+                    <th
+                      style={{
+                        border: "1px solid #ddd",
+                        padding: "8px",
+                        minWidth: "100px",
+                      }}
+                    >
+                      Time
+                    </th>
+                    {weekdays.map((day) => (
+                      <th
+                        key={day}
+                        style={{
+                          border: "1px solid #ddd",
+                          padding: "8px",
+                          minWidth: "140px",
+                        }}
+                      >
+                        {day}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {timeSlots.map((slot) => {
+                    const slotKey = `${slot.startTime}-${slot.endTime}`;
+                    return (
+                      <tr key={slotKey}>
+                        <td
+                          style={{
+                            border: "1px solid #ddd",
+                            padding: "8px",
+                            fontWeight: "bold",
+                            backgroundColor: "#f9f9f9",
+                            minWidth: "100px",
+                          }}
+                        >
+                          {slot.startTime}-{slot.endTime}
+                        </td>
+                        {weekdays.map((day) => {
+                          const sessions =
+                            groupedByDayAndSlot[day]?.[slotKey] || [];
+                          return (
+                            <td
+                              key={`${day}-${slotKey}`}
+                              style={{
+                                border: "1px solid #ddd",
+                                padding: "4px",
+                                verticalAlign: "top",
+                              }}
+                            >
+                              {sessions.map((s) => (
+                                <div
+                                  key={s._id}
+                                  style={{
+                                    marginBottom: "4px",
+                                    padding: "4px",
+                                    border: "1px solid #ccc",
+                                    borderRadius: "3px",
+                                    backgroundColor: "#fafafa",
+                                    fontSize: "11px",
+                                  }}
+                                >
+                                  <div>
+                                    <strong>{s.module?.code}</strong>
+                                  </div>
+                                  <div>
+                                    {s.lecturer
+                                      ? s.lecturer.lecturerTitle
+                                        ? `${s.lecturer.lecturerTitle} ${s.lecturer.name}`
+                                        : s.lecturer.name
+                                      : "N/A"}
+                                  </div>
+                                  <div>
+                                    Batch: {s.batchGroup?.batchNo || "N/A"}
+                                  </div>
+                                  <div>Hall: {s.hall?.name || "N/A"}</div>
+                                  <div>
+                                    <span
+                                      style={{
+                                        color:
+                                          s.status === "published"
+                                            ? "green"
+                                            : "orange",
+                                        fontWeight: "bold",
+                                      }}
+                                    >
+                                      {s.status}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
         {/* PUBLISH TIMETABLE */}
         <div className="admin-card">
           <h3>Publish Final Timetable</h3>
@@ -639,12 +856,10 @@ function AdminDashboard() {
               className="publish-input"
             />
 
-            <span className="char-count">
-              {publishMessage.length}/100
-            </span>
+            <span className="char-count">{publishMessage.length}/100</span>
 
-            <button 
-              className="primary-btn publish-btn" 
+            <button
+              className="primary-btn publish-btn"
               onClick={handlePublishTimetable}
             >
               Publish
@@ -674,15 +889,27 @@ function AdminDashboard() {
                   {tickets.map((ticket) => (
                     <tr key={ticket._id}>
                       <td>{ticket.ticketId}</td>
-                      <td>{ticket.sender?.name || "Unknown"}<br /><small>{ticket.sender?.role}</small></td>
-                      <td>{ticket.subject}</td>
-                      <td style={{ maxWidth: "200px", wordBreak: "break-word" }}>{ticket.message}</td>
                       <td>
-                        <span className={`status ${ticket.status}`}>{ticket.status}</span>
+                        {ticket.sender?.name || "Unknown"}
+                        <br />
+                        <small>{ticket.sender?.role}</small>
+                      </td>
+                      <td>{ticket.subject}</td>
+                      <td
+                        style={{ maxWidth: "200px", wordBreak: "break-word" }}
+                      >
+                        {ticket.message}
+                      </td>
+                      <td>
+                        <span className={`status ${ticket.status}`}>
+                          {ticket.status}
+                        </span>
                       </td>
                       <td>
                         {ticket.status === "replied" ? (
-                          <span style={{ color: "#28a745" }}>{ticket.reply}</span>
+                          <span style={{ color: "#28a745" }}>
+                            {ticket.reply}
+                          </span>
                         ) : (
                           <div style={{ display: "flex", gap: "6px" }}>
                             <input
@@ -690,9 +917,17 @@ function AdminDashboard() {
                               placeholder="Write reply..."
                               value={ticketReply[ticket._id] || ""}
                               onChange={(e) =>
-                                setTicketReply((prev) => ({ ...prev, [ticket._id]: e.target.value }))
+                                setTicketReply((prev) => ({
+                                  ...prev,
+                                  [ticket._id]: e.target.value,
+                                }))
                               }
-                              style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", flex: 1 }}
+                              style={{
+                                padding: "6px",
+                                borderRadius: "4px",
+                                border: "1px solid #ccc",
+                                flex: 1,
+                              }}
                             />
                             <button
                               className="primary-btn"
