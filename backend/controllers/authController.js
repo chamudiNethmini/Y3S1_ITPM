@@ -4,7 +4,6 @@ const jwt = require("jsonwebtoken");
 const AuditLog = require("../models/AuditLog");
 const crypto = require("crypto");
 
-
 // =========================
 // LOGIN
 // =========================
@@ -39,42 +38,50 @@ exports.login = async (req, res) => {
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" }
+      { expiresIn: "1d" },
     );
 
     // AUDIT LOG
     await AuditLog.create({
       action: "User Logged In",
       performedBy: user._id,
-      targetUser: user._id
+      targetUser: user._id,
     });
 
     res.json({
-  token,
-  role: user.role,
-  name: user.name,
-  email: user.email,
-  id: user._id
-});
-
+      token,
+      role: user.role,
+      name: user.name,
+      email: user.email,
+      id: user._id,
+    });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-
 // =========================
 // CREATE USER (WITH EMAIL VALIDATION)
 // =========================
 exports.createUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, moduleCode } = req.body;
 
     // 🔴 EMAIL VALIDATION
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailPattern.test(email)) {
       return res.status(400).json({ message: "Invalid email format" });
+    }
+
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    if (role === "lic" && !moduleCode) {
+      return res
+        .status(400)
+        .json({ message: "Module code is required for LIC users" });
     }
 
     const existing = await User.findOne({ email });
@@ -84,32 +91,36 @@ exports.createUser = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = await User.create({
+    const newUserData = {
       name,
       email,
       password: hashedPassword,
       role,
-      status: "pending"
-    });
+      status: "pending",
+    };
+
+    if (role === "lic") {
+      newUserData.moduleCode = moduleCode;
+    }
+
+    const newUser = await User.create(newUserData);
 
     // AUDIT LOG
     await AuditLog.create({
       action: "User Created",
       performedBy: req.user?.id,
-      targetUser: newUser._id
+      targetUser: newUser._id,
     });
 
     res.status(201).json({
       message: "User created successfully",
-      user: newUser
+      user: newUser,
     });
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 // =========================
 // GET ALL USERS
@@ -122,7 +133,6 @@ exports.getAllUsers = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 // =========================
 // GET PROFILE
@@ -139,7 +149,6 @@ exports.getProfile = async (req, res) => {
   }
 };
 
-
 // =========================
 // UPDATE USER STATUS
 // =========================
@@ -150,26 +159,24 @@ exports.updateUserStatus = async (req, res) => {
     const user = await User.findByIdAndUpdate(
       req.params.id,
       { status },
-      { new: true }
+      { new: true },
     ).select("-password");
 
     // AUDIT LOG
     await AuditLog.create({
       action: `User status changed to ${status}`,
       performedBy: req.user.id,
-      targetUser: user._id
+      targetUser: user._id,
     });
 
     res.json({
       message: "Status updated successfully",
-      user
+      user,
     });
-
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 // =========================
 // UPDATE USER ROLE
@@ -181,25 +188,23 @@ exports.updateUserRole = async (req, res) => {
     const user = await User.findByIdAndUpdate(
       req.params.id,
       { role },
-      { new: true }
+      { new: true },
     ).select("-password");
 
     await AuditLog.create({
       action: `User role changed to ${role}`,
       performedBy: req.user.id,
-      targetUser: user._id
+      targetUser: user._id,
     });
 
     res.json({
       message: "Role updated successfully",
-      user
+      user,
     });
-
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 // =========================
 // CHANGE PASSWORD
@@ -207,32 +212,31 @@ exports.updateUserRole = async (req, res) => {
 exports.changePassword = async (req, res) => {
   try {
     const { oldPassword, newPassword } = req.body;
-    
+
     const user = await User.findById(req.user.id);
-    
+
     const isMatch = await bcrypt.compare(oldPassword, user.password);
-    
+
     if (!isMatch) {
       return res.status(400).json({ message: "Old password incorrect" });
     }
-    
+
     const hashed = await bcrypt.hash(newPassword, 10);
     user.password = hashed;
     await user.save();
-    
+
     // AUDIT LOG
     await AuditLog.create({
       action: "Password Changed",
       performedBy: req.user.id,
-      targetUser: req.user.id
+      targetUser: req.user.id,
     });
-    
+
     res.json({ message: "Password updated successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 // =========================
 // DELETE USER
@@ -255,16 +259,14 @@ exports.deleteUser = async (req, res) => {
     await AuditLog.create({
       action: "User Deleted",
       performedBy: req.user.id,
-      targetUser: user._id
+      targetUser: user._id,
     });
 
     res.json({ message: "User deleted successfully" });
-
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 // =========================
 // GET AUDIT LOGS
@@ -281,7 +283,6 @@ exports.getAuditLogs = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 // =========================
 // FORGOT PASSWORD
@@ -305,14 +306,12 @@ exports.forgotPassword = async (req, res) => {
 
     res.json({
       message: "Password reset token generated",
-      token
+      token,
     });
-
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 // =========================
 // RESET PASSWORD
@@ -323,7 +322,7 @@ exports.resetPassword = async (req, res) => {
 
     const user = await User.findOne({
       resetToken: token,
-      resetTokenExpiry: { $gt: Date.now() }
+      resetTokenExpiry: { $gt: Date.now() },
     });
 
     if (!user) {
@@ -342,11 +341,10 @@ exports.resetPassword = async (req, res) => {
     await AuditLog.create({
       action: "Password Reset",
       performedBy: user._id,
-      targetUser: user._id
+      targetUser: user._id,
     });
 
     res.json({ message: "Password reset successful" });
-
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
