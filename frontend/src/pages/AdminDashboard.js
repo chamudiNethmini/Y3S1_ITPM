@@ -364,48 +364,186 @@ function AdminDashboard() {
 
   // ================= PDF DOWNLOAD =================
   const downloadTimetablePDF = async () => {
-    const timetableElement = document.getElementById('timetable-table');
-    if (!timetableElement) {
-      alert('Timetable not found');
+    if (filteredTimetable.length === 0) {
+      alert('No timetable entries to download');
       return;
     }
 
     try {
-      const canvas = await html2canvas(timetableElement, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
+      const pdf = new jsPDF('landscape', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      let yPosition = margin;
+
+      // Title
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'bold');
+      const batchName = selectedTimetableBatch || 'All Batches';
+      const title = `Timetable Report - ${batchName}`;
+      pdf.text(title, pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 15;
+
+      // Date
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Generated on: ${new Date().toLocaleDateString()}`, margin, yPosition);
+      yPosition += 10;
+
+      // Summary statistics
+      const totalSessions = filteredTimetable.length;
+      const publishedSessions = filteredTimetable.filter(s => s.status === 'published').length;
+      const assignedSessions = filteredTimetable.filter(s => s.lecturer).length;
+
+      pdf.text(`Total Sessions: ${totalSessions}`, margin, yPosition);
+      pdf.text(`Published: ${publishedSessions}`, margin + 60, yPosition);
+      pdf.text(`Assigned: ${assignedSessions}`, margin + 120, yPosition);
+      yPosition += 15;
+
+      // Group sessions by day and time for the grid
+      const groupedData = {};
+      filteredTimetable.forEach(session => {
+        const day = session.day;
+        const timeSlot = `${session.startTime}-${session.endTime}`;
+        if (!groupedData[day]) groupedData[day] = {};
+        if (!groupedData[day][timeSlot]) groupedData[day][timeSlot] = [];
+        groupedData[day][timeSlot].push(session);
       });
 
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('landscape', 'mm', 'a4');
+      // Create timetable grid
+      const timeSlots = [...new Set(filteredTimetable.map(s => `${s.startTime}-${s.endTime}`))].sort();
+      const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
-      const imgWidth = 297; // A4 landscape width in mm
-      const pageHeight = 210; // A4 landscape height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
+      // Table headers
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'bold');
 
-      let position = 0;
+      // Time column header
+      pdf.text('Time', margin, yPosition);
+      let xPosition = margin + 25;
 
-      // Add first page
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+      // Day headers
+      days.forEach(day => {
+        pdf.text(day.substring(0, 3), xPosition, yPosition);
+        xPosition += 35;
+      });
+      yPosition += 8;
 
-      // Add additional pages if needed
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
+      // Draw table lines
+      pdf.setLineWidth(0.5);
+      pdf.line(margin, yPosition - 5, xPosition - 5, yPosition - 5); // Top line
 
-      const batchName = selectedTimetableBatch || 'All_Batches';
-      const fileName = `Timetable_${batchName}_${new Date().toISOString().split('T')[0]}.pdf`;
+      // Table content
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
 
+      timeSlots.forEach(timeSlot => {
+        if (yPosition > pageHeight - 30) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+
+        // Time column
+        pdf.text(timeSlot.replace('-', '-'), margin, yPosition);
+        xPosition = margin + 25;
+
+        days.forEach(day => {
+          const sessions = groupedData[day]?.[timeSlot] || [];
+          let cellText = '';
+
+          if (sessions.length > 0) {
+            sessions.forEach((session, index) => {
+              if (index > 0) cellText += '\n';
+              cellText += `${session.module?.code || 'N/A'}\n`;
+              cellText += `${session.lecturer ? (session.lecturer.lecturerTitle ? `${session.lecturer.lecturerTitle} ${session.lecturer.name}` : session.lecturer.name).substring(0, 15) : 'Unassigned'}\n`;
+              cellText += `${session.hall?.name || 'N/A'}`;
+            });
+          } else {
+            cellText = '-';
+          }
+
+          // Draw cell border
+          pdf.rect(xPosition - 2, yPosition - 5, 33, 15);
+
+          // Add text
+          const lines = pdf.splitTextToSize(cellText, 30);
+          pdf.text(lines, xPosition, yPosition);
+
+          xPosition += 35;
+        });
+
+        yPosition += 18;
+      });
+
+      // Add new page for detailed module information
+      pdf.addPage();
+      yPosition = margin;
+
+      // Detailed Module Information Section
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Detailed Module Information', pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 20;
+
+      // Get unique modules
+      const uniqueModules = [...new Set(filteredTimetable.map(s => s.module?._id).filter(Boolean))];
+
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+
+      filteredTimetable.forEach(session => {
+        if (!session.module) return;
+
+        if (yPosition > pageHeight - 50) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+
+        // Module header
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(11);
+        const moduleTitle = `${session.module.code} - ${session.module.name}`;
+        pdf.text(moduleTitle, margin, yPosition);
+        yPosition += 8;
+
+        // Module details
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(9);
+
+        pdf.text(`Lecturer: ${session.lecturer ? (session.lecturer.lecturerTitle ? `${session.lecturer.lecturerTitle} ${session.lecturer.name}` : session.lecturer.name) : 'Unassigned'}`, margin + 5, yPosition);
+        yPosition += 6;
+
+        pdf.text(`Batch: ${session.batchGroup?.batchNo || 'N/A'}`, margin + 5, yPosition);
+        yPosition += 6;
+
+        pdf.text(`Hall: ${session.hall?.name || 'N/A'}`, margin + 5, yPosition);
+        yPosition += 6;
+
+        pdf.text(`Time: ${session.day} ${session.startTime}-${session.endTime}`, margin + 5, yPosition);
+        yPosition += 6;
+
+        pdf.text(`Status: ${session.status}`, margin + 5, yPosition);
+        yPosition += 6;
+
+        // Module description/topics
+        if (session.module.description) {
+          pdf.text(`Topics: ${session.module.description}`, margin + 5, yPosition);
+          yPosition += 8;
+        }
+
+        // Separator line
+        pdf.setLineWidth(0.3);
+        pdf.line(margin, yPosition, pageWidth - margin, yPosition);
+        yPosition += 10;
+      });
+
+      // Save the PDF
+      const fileName = `Timetable_Detailed_${batchName}_${new Date().toISOString().split('T')[0]}.pdf`;
       pdf.save(fileName);
+
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert('Failed to generate PDF');
+      alert('Failed to generate PDF. Please try again.');
     }
   };
 
@@ -768,7 +906,7 @@ function AdminDashboard() {
                 }}
                 disabled={filteredTimetable.length === 0}
               >
-                📄 Download PDF
+                📄 Download Detailed PDF
               </button>
               <select
                 value={selectedTimetableBatch}
