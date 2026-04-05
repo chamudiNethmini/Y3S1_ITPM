@@ -3,8 +3,8 @@ import API from "../services/api";
 import { useNavigate } from "react-router-dom";
 import "../styles/AdminDashboard.css";
 import Navbar from "../components/Navbar";
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 function AdminDashboard() {
   const [users, setUsers] = useState([]);
@@ -365,12 +365,12 @@ function AdminDashboard() {
   // ================= PDF DOWNLOAD =================
   const downloadTimetablePDF = async () => {
     if (filteredTimetable.length === 0) {
-      alert('No timetable entries to download');
+      alert("No timetable entries to download");
       return;
     }
 
     try {
-      const pdf = new jsPDF('landscape', 'mm', 'a4');
+      const pdf = new jsPDF("landscape", "mm", "a4");
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 10;
@@ -378,22 +378,30 @@ function AdminDashboard() {
 
       // Title
       pdf.setFontSize(18);
-      pdf.setFont('helvetica', 'bold');
-      const batchName = selectedTimetableBatch || 'All Batches';
+      pdf.setFont("helvetica", "bold");
+      const batchName = selectedTimetableBatch || "All Batches";
       const title = `Timetable Report - ${batchName}`;
-      pdf.text(title, pageWidth / 2, yPosition, { align: 'center' });
+      pdf.text(title, pageWidth / 2, yPosition, { align: "center" });
       yPosition += 15;
 
       // Date
       pdf.setFontSize(12);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Generated on: ${new Date().toLocaleDateString()}`, margin, yPosition);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(
+        `Generated on: ${new Date().toLocaleDateString()}`,
+        margin,
+        yPosition,
+      );
       yPosition += 10;
 
       // Summary statistics
       const totalSessions = filteredTimetable.length;
-      const publishedSessions = filteredTimetable.filter(s => s.status === 'published').length;
-      const assignedSessions = filteredTimetable.filter(s => s.lecturer).length;
+      const publishedSessions = filteredTimetable.filter(
+        (s) => s.status === "published",
+      ).length;
+      const assignedSessions = filteredTimetable.filter(
+        (s) => s.lecturer,
+      ).length;
 
       pdf.text(`Total Sessions: ${totalSessions}`, margin, yPosition);
       pdf.text(`Published: ${publishedSessions}`, margin + 60, yPosition);
@@ -402,7 +410,7 @@ function AdminDashboard() {
 
       // Group sessions by day and time for the grid
       const groupedData = {};
-      filteredTimetable.forEach(session => {
+      filteredTimetable.forEach((session) => {
         const day = session.day;
         const timeSlot = `${session.startTime}-${session.endTime}`;
         if (!groupedData[day]) groupedData[day] = {};
@@ -411,19 +419,21 @@ function AdminDashboard() {
       });
 
       // Create timetable grid
-      const timeSlots = [...new Set(filteredTimetable.map(s => `${s.startTime}-${s.endTime}`))].sort();
-      const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+      const timeSlots = [
+        ...new Set(filteredTimetable.map((s) => `${s.startTime}-${s.endTime}`)),
+      ].sort();
+      const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
       // Table headers
       pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'bold');
+      pdf.setFont("helvetica", "bold");
 
       // Time column header
-      pdf.text('Time', margin, yPosition);
+      pdf.text("Time", margin, yPosition);
       let xPosition = margin + 25;
 
       // Day headers
-      days.forEach(day => {
+      days.forEach((day) => {
         pdf.text(day.substring(0, 3), xPosition, yPosition);
         xPosition += 35;
       });
@@ -434,32 +444,32 @@ function AdminDashboard() {
       pdf.line(margin, yPosition - 5, xPosition - 5, yPosition - 5); // Top line
 
       // Table content
-      pdf.setFont('helvetica', 'normal');
+      pdf.setFont("helvetica", "normal");
       pdf.setFontSize(8);
 
-      timeSlots.forEach(timeSlot => {
+      timeSlots.forEach((timeSlot) => {
         if (yPosition > pageHeight - 30) {
           pdf.addPage();
           yPosition = margin;
         }
 
         // Time column
-        pdf.text(timeSlot.replace('-', '-'), margin, yPosition);
+        pdf.text(timeSlot.replace("-", "-"), margin, yPosition);
         xPosition = margin + 25;
 
-        days.forEach(day => {
+        days.forEach((day) => {
           const sessions = groupedData[day]?.[timeSlot] || [];
-          let cellText = '';
+          let cellText = "";
 
           if (sessions.length > 0) {
             sessions.forEach((session, index) => {
-              if (index > 0) cellText += '\n';
-              cellText += `${session.module?.code || 'N/A'}\n`;
-              cellText += `${session.lecturer ? (session.lecturer.lecturerTitle ? `${session.lecturer.lecturerTitle} ${session.lecturer.name}` : session.lecturer.name).substring(0, 15) : 'Unassigned'}\n`;
-              cellText += `${session.hall?.name || 'N/A'}`;
+              if (index > 0) cellText += "\n";
+              cellText += `${session.module?.code || "N/A"}\n`;
+              cellText += `${session.lecturer ? (session.lecturer.lecturerTitle ? `${session.lecturer.lecturerTitle} ${session.lecturer.name}` : session.lecturer.name).substring(0, 15) : "Unassigned"}\n`;
+              cellText += `${session.hall?.name || "N/A"}`;
             });
           } else {
-            cellText = '-';
+            cellText = "-";
           }
 
           // Draw cell border
@@ -481,17 +491,21 @@ function AdminDashboard() {
 
       // Detailed Module Information Section
       pdf.setFontSize(16);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Detailed Module Information', pageWidth / 2, yPosition, { align: 'center' });
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Detailed Module Information", pageWidth / 2, yPosition, {
+        align: "center",
+      });
       yPosition += 20;
 
       // Get unique modules
-      const uniqueModules = [...new Set(filteredTimetable.map(s => s.module?._id).filter(Boolean))];
+      const uniqueModules = [
+        ...new Set(filteredTimetable.map((s) => s.module?._id).filter(Boolean)),
+      ];
 
       pdf.setFontSize(12);
-      pdf.setFont('helvetica', 'normal');
+      pdf.setFont("helvetica", "normal");
 
-      filteredTimetable.forEach(session => {
+      filteredTimetable.forEach((session) => {
         if (!session.module) return;
 
         if (yPosition > pageHeight - 50) {
@@ -500,26 +514,38 @@ function AdminDashboard() {
         }
 
         // Module header
-        pdf.setFont('helvetica', 'bold');
+        pdf.setFont("helvetica", "bold");
         pdf.setFontSize(11);
         const moduleTitle = `${session.module.code} - ${session.module.name}`;
         pdf.text(moduleTitle, margin, yPosition);
         yPosition += 8;
 
         // Module details
-        pdf.setFont('helvetica', 'normal');
+        pdf.setFont("helvetica", "normal");
         pdf.setFontSize(9);
 
-        pdf.text(`Lecturer: ${session.lecturer ? (session.lecturer.lecturerTitle ? `${session.lecturer.lecturerTitle} ${session.lecturer.name}` : session.lecturer.name) : 'Unassigned'}`, margin + 5, yPosition);
+        pdf.text(
+          `Lecturer: ${session.lecturer ? (session.lecturer.lecturerTitle ? `${session.lecturer.lecturerTitle} ${session.lecturer.name}` : session.lecturer.name) : "Unassigned"}`,
+          margin + 5,
+          yPosition,
+        );
         yPosition += 6;
 
-        pdf.text(`Batch: ${session.batchGroup?.batchNo || 'N/A'}`, margin + 5, yPosition);
+        pdf.text(
+          `Batch: ${session.batchGroup?.batchNo || "N/A"}`,
+          margin + 5,
+          yPosition,
+        );
         yPosition += 6;
 
-        pdf.text(`Hall: ${session.hall?.name || 'N/A'}`, margin + 5, yPosition);
+        pdf.text(`Hall: ${session.hall?.name || "N/A"}`, margin + 5, yPosition);
         yPosition += 6;
 
-        pdf.text(`Time: ${session.day} ${session.startTime}-${session.endTime}`, margin + 5, yPosition);
+        pdf.text(
+          `Time: ${session.day} ${session.startTime}-${session.endTime}`,
+          margin + 5,
+          yPosition,
+        );
         yPosition += 6;
 
         pdf.text(`Status: ${session.status}`, margin + 5, yPosition);
@@ -527,7 +553,11 @@ function AdminDashboard() {
 
         // Module description/topics
         if (session.module.description) {
-          pdf.text(`Topics: ${session.module.description}`, margin + 5, yPosition);
+          pdf.text(
+            `Topics: ${session.module.description}`,
+            margin + 5,
+            yPosition,
+          );
           yPosition += 8;
         }
 
@@ -538,12 +568,11 @@ function AdminDashboard() {
       });
 
       // Save the PDF
-      const fileName = `Timetable_Detailed_${batchName}_${new Date().toISOString().split('T')[0]}.pdf`;
+      const fileName = `Timetable_Detailed_${batchName}_${new Date().toISOString().split("T")[0]}.pdf`;
       pdf.save(fileName);
-
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      alert('Failed to generate PDF. Please try again.');
+      console.error("Error generating PDF:", error);
+      alert("Failed to generate PDF. Please try again.");
     }
   };
 
