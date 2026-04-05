@@ -3,6 +3,8 @@ import API from "../services/api";
 import { useNavigate } from "react-router-dom";
 import "../styles/AdminDashboard.css";
 import Navbar from "../components/Navbar";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 function AdminDashboard() {
   const [users, setUsers] = useState([]);
@@ -360,6 +362,53 @@ function AdminDashboard() {
     }
   };
 
+  // ================= PDF DOWNLOAD =================
+  const downloadTimetablePDF = async () => {
+    const timetableElement = document.getElementById('timetable-table');
+    if (!timetableElement) {
+      alert('Timetable not found');
+      return;
+    }
+
+    try {
+      const canvas = await html2canvas(timetableElement, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('landscape', 'mm', 'a4');
+
+      const imgWidth = 297; // A4 landscape width in mm
+      const pageHeight = 210; // A4 landscape height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+
+      let position = 0;
+
+      // Add first page
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      // Add additional pages if needed
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      const batchName = selectedTimetableBatch || 'All_Batches';
+      const fileName = `Timetable_${batchName}_${new Date().toISOString().split('T')[0]}.pdf`;
+
+      pdf.save(fileName);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Failed to generate PDF');
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
     fetchAuditLogs();
@@ -705,30 +754,48 @@ function AdminDashboard() {
             }}
           >
             <h3>LIC Timetable Grid ({filteredTimetable.length})</h3>
-            <select
-              value={selectedTimetableBatch}
-              onChange={(e) => setSelectedTimetableBatch(e.target.value)}
-              style={{
-                padding: "8px 12px",
-                borderRadius: "5px",
-                border: "1px solid #ddd",
-                fontSize: "14px",
-                cursor: "pointer",
-              }}
-            >
-              <option value="">All Batches</option>
-              {batchOptions.map((batch) => (
-                <option key={batch} value={batch}>
-                  {batch}
-                </option>
-              ))}
-            </select>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <button
+                onClick={downloadTimetablePDF}
+                style={{
+                  padding: "8px 16px",
+                  backgroundColor: "#4CAF50",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                }}
+                disabled={filteredTimetable.length === 0}
+              >
+                📄 Download PDF
+              </button>
+              <select
+                value={selectedTimetableBatch}
+                onChange={(e) => setSelectedTimetableBatch(e.target.value)}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "5px",
+                  border: "1px solid #ddd",
+                  fontSize: "14px",
+                  cursor: "pointer",
+                }}
+              >
+                <option value="">All Batches</option>
+                {batchOptions.map((batch) => (
+                  <option key={batch} value={batch}>
+                    {batch}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           {filteredTimetable.length === 0 ? (
             <p style={{ color: "#888" }}>No timetable entries.</p>
           ) : (
             <div style={{ overflowX: "auto" }}>
               <table
+                id="timetable-table"
                 className="lic-table"
                 style={{
                   width: "100%",
