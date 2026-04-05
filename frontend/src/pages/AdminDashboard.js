@@ -3,6 +3,8 @@ import API from "../services/api";
 import { useNavigate } from "react-router-dom";
 import "../styles/AdminDashboard.css";
 import Navbar from "../components/Navbar";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 function AdminDashboard() {
   const [users, setUsers] = useState([]);
@@ -360,6 +362,220 @@ function AdminDashboard() {
     }
   };
 
+  // ================= PDF DOWNLOAD =================
+  const downloadTimetablePDF = async () => {
+    if (filteredTimetable.length === 0) {
+      alert("No timetable entries to download");
+      return;
+    }
+
+    try {
+      const pdf = new jsPDF("landscape", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      let yPosition = margin;
+
+      // Title
+      pdf.setFontSize(18);
+      pdf.setFont("helvetica", "bold");
+      const batchName = selectedTimetableBatch || "All Batches";
+      const title = `Timetable Report - ${batchName}`;
+      pdf.text(title, pageWidth / 2, yPosition, { align: "center" });
+      yPosition += 15;
+
+      // Date
+      pdf.setFontSize(12);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(
+        `Generated on: ${new Date().toLocaleDateString()}`,
+        margin,
+        yPosition,
+      );
+      yPosition += 10;
+
+      // Summary statistics
+      const totalSessions = filteredTimetable.length;
+      const publishedSessions = filteredTimetable.filter(
+        (s) => s.status === "published",
+      ).length;
+      const assignedSessions = filteredTimetable.filter(
+        (s) => s.lecturer,
+      ).length;
+
+      pdf.text(`Total Sessions: ${totalSessions}`, margin, yPosition);
+      pdf.text(`Published: ${publishedSessions}`, margin + 60, yPosition);
+      pdf.text(`Assigned: ${assignedSessions}`, margin + 120, yPosition);
+      yPosition += 15;
+
+      // Group sessions by day and time for the grid
+      const groupedData = {};
+      filteredTimetable.forEach((session) => {
+        const day = session.day;
+        const timeSlot = `${session.startTime}-${session.endTime}`;
+        if (!groupedData[day]) groupedData[day] = {};
+        if (!groupedData[day][timeSlot]) groupedData[day][timeSlot] = [];
+        groupedData[day][timeSlot].push(session);
+      });
+
+      // Create timetable grid
+      const timeSlots = [
+        ...new Set(filteredTimetable.map((s) => `${s.startTime}-${s.endTime}`)),
+      ].sort();
+      const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+
+      // Table headers
+      pdf.setFontSize(10);
+      pdf.setFont("helvetica", "bold");
+
+      // Time column header
+      pdf.text("Time", margin, yPosition);
+      let xPosition = margin + 25;
+
+      // Day headers
+      days.forEach((day) => {
+        pdf.text(day.substring(0, 3), xPosition, yPosition);
+        xPosition += 35;
+      });
+      yPosition += 8;
+
+      // Draw table lines
+      pdf.setLineWidth(0.5);
+      pdf.line(margin, yPosition - 5, xPosition - 5, yPosition - 5); // Top line
+
+      // Table content
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(8);
+
+      timeSlots.forEach((timeSlot) => {
+        if (yPosition > pageHeight - 30) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+
+        // Time column
+        pdf.text(timeSlot.replace("-", "-"), margin, yPosition);
+        xPosition = margin + 25;
+
+        days.forEach((day) => {
+          const sessions = groupedData[day]?.[timeSlot] || [];
+          let cellText = "";
+
+          if (sessions.length > 0) {
+            sessions.forEach((session, index) => {
+              if (index > 0) cellText += "\n";
+              cellText += `${session.module?.code || "N/A"}\n`;
+              cellText += `${session.lecturer ? (session.lecturer.lecturerTitle ? `${session.lecturer.lecturerTitle} ${session.lecturer.name}` : session.lecturer.name).substring(0, 15) : "Unassigned"}\n`;
+              cellText += `${session.hall?.name || "N/A"}`;
+            });
+          } else {
+            cellText = "-";
+          }
+
+          // Draw cell border
+          pdf.rect(xPosition - 2, yPosition - 5, 33, 15);
+
+          // Add text
+          const lines = pdf.splitTextToSize(cellText, 30);
+          pdf.text(lines, xPosition, yPosition);
+
+          xPosition += 35;
+        });
+
+        yPosition += 18;
+      });
+
+      // Add new page for detailed module information
+      pdf.addPage();
+      yPosition = margin;
+
+      // Detailed Module Information Section
+      pdf.setFontSize(16);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Detailed Module Information", pageWidth / 2, yPosition, {
+        align: "center",
+      });
+      yPosition += 20;
+
+      // Get unique modules
+      const uniqueModules = [
+        ...new Set(filteredTimetable.map((s) => s.module?._id).filter(Boolean)),
+      ];
+
+      pdf.setFontSize(12);
+      pdf.setFont("helvetica", "normal");
+
+      filteredTimetable.forEach((session) => {
+        if (!session.module) return;
+
+        if (yPosition > pageHeight - 50) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+
+        // Module header
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(11);
+        const moduleTitle = `${session.module.code} - ${session.module.name}`;
+        pdf.text(moduleTitle, margin, yPosition);
+        yPosition += 8;
+
+        // Module details
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(9);
+
+        pdf.text(
+          `Lecturer: ${session.lecturer ? (session.lecturer.lecturerTitle ? `${session.lecturer.lecturerTitle} ${session.lecturer.name}` : session.lecturer.name) : "Unassigned"}`,
+          margin + 5,
+          yPosition,
+        );
+        yPosition += 6;
+
+        pdf.text(
+          `Batch: ${session.batchGroup?.batchNo || "N/A"}`,
+          margin + 5,
+          yPosition,
+        );
+        yPosition += 6;
+
+        pdf.text(`Hall: ${session.hall?.name || "N/A"}`, margin + 5, yPosition);
+        yPosition += 6;
+
+        pdf.text(
+          `Time: ${session.day} ${session.startTime}-${session.endTime}`,
+          margin + 5,
+          yPosition,
+        );
+        yPosition += 6;
+
+        pdf.text(`Status: ${session.status}`, margin + 5, yPosition);
+        yPosition += 6;
+
+        // Module description/topics
+        if (session.module.description) {
+          pdf.text(
+            `Topics: ${session.module.description}`,
+            margin + 5,
+            yPosition,
+          );
+          yPosition += 8;
+        }
+
+        // Separator line
+        pdf.setLineWidth(0.3);
+        pdf.line(margin, yPosition, pageWidth - margin, yPosition);
+        yPosition += 10;
+      });
+
+      // Save the PDF
+      const fileName = `Timetable_Detailed_${batchName}_${new Date().toISOString().split("T")[0]}.pdf`;
+      pdf.save(fileName);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Failed to generate PDF. Please try again.");
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
     fetchAuditLogs();
@@ -705,30 +921,48 @@ function AdminDashboard() {
             }}
           >
             <h3>LIC Timetable Grid ({filteredTimetable.length})</h3>
-            <select
-              value={selectedTimetableBatch}
-              onChange={(e) => setSelectedTimetableBatch(e.target.value)}
-              style={{
-                padding: "8px 12px",
-                borderRadius: "5px",
-                border: "1px solid #ddd",
-                fontSize: "14px",
-                cursor: "pointer",
-              }}
-            >
-              <option value="">All Batches</option>
-              {batchOptions.map((batch) => (
-                <option key={batch} value={batch}>
-                  {batch}
-                </option>
-              ))}
-            </select>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <button
+                onClick={downloadTimetablePDF}
+                style={{
+                  padding: "8px 16px",
+                  backgroundColor: "#4CAF50",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                }}
+                disabled={filteredTimetable.length === 0}
+              >
+                📄 Download Detailed PDF
+              </button>
+              <select
+                value={selectedTimetableBatch}
+                onChange={(e) => setSelectedTimetableBatch(e.target.value)}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "5px",
+                  border: "1px solid #ddd",
+                  fontSize: "14px",
+                  cursor: "pointer",
+                }}
+              >
+                <option value="">All Batches</option>
+                {batchOptions.map((batch) => (
+                  <option key={batch} value={batch}>
+                    {batch}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           {filteredTimetable.length === 0 ? (
             <p style={{ color: "#888" }}>No timetable entries.</p>
           ) : (
             <div style={{ overflowX: "auto" }}>
               <table
+                id="timetable-table"
                 className="lic-table"
                 style={{
                   width: "100%",
