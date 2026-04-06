@@ -79,6 +79,33 @@ exports.getAllResources = async (req, res) => {
 
     const resources = await Resource.find(filter).sort({ createdAt: -1 });
 
+    if (type === 'lecturer') {
+      // Calculate assigned hours for lecturers
+      const TimetableEntry = require("../models/TimetableEntry");
+      const lecturerIds = resources.map(r => r._id);
+
+      const assignedHoursMap = {};
+      for (const lecturerId of lecturerIds) {
+        const entries = await TimetableEntry.find({ lecturer: lecturerId });
+        let totalHours = 0;
+        entries.forEach(entry => {
+          const [startH, startM] = entry.startTime.split(':').map(Number);
+          const [endH, endM] = entry.endTime.split(':').map(Number);
+          const hours = (endH * 60 + endM - (startH * 60 + startM)) / 60;
+          totalHours += hours;
+        });
+        assignedHoursMap[lecturerId] = totalHours;
+      }
+
+      // Add assignedHours to each lecturer
+      const enhancedResources = resources.map(resource => ({
+        ...resource.toObject(),
+        assignedHours: assignedHoursMap[resource._id] || 0,
+      }));
+
+      return res.json(enhancedResources);
+    }
+
     res.json(resources);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
