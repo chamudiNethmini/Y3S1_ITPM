@@ -36,7 +36,8 @@ exports.createResource = async (req, res) => {
 
     const existing = await Resource.findOne({
       resourceType,
-      lecturerTitle: resourceType === "lecturer" ? lecturerTitle?.trim() || "" : "",
+      lecturerTitle:
+        resourceType === "lecturer" ? lecturerTitle?.trim() || "" : "",
       name: name.trim(),
       code: code?.trim() || "",
       batchNo: batchNo?.trim() || "",
@@ -50,7 +51,8 @@ exports.createResource = async (req, res) => {
 
     const resource = await Resource.create({
       resourceType,
-      lecturerTitle: resourceType === "lecturer" ? lecturerTitle?.trim() || "" : "",
+      lecturerTitle:
+        resourceType === "lecturer" ? lecturerTitle?.trim() || "" : "",
       name: name.trim(),
       batchNo: batchNo?.trim() || "",
       code: code?.trim() || "",
@@ -79,18 +81,18 @@ exports.getAllResources = async (req, res) => {
 
     const resources = await Resource.find(filter).sort({ createdAt: -1 });
 
-    if (type === 'lecturer') {
+    if (type === "lecturer") {
       // Calculate assigned hours for lecturers
       const TimetableEntry = require("../models/TimetableEntry");
-      const lecturerIds = resources.map(r => r._id);
+      const lecturerIds = resources.map((r) => r._id);
 
       const assignedHoursMap = {};
       for (const lecturerId of lecturerIds) {
         const entries = await TimetableEntry.find({ lecturer: lecturerId });
         let totalHours = 0;
-        entries.forEach(entry => {
-          const [startH, startM] = entry.startTime.split(':').map(Number);
-          const [endH, endM] = entry.endTime.split(':').map(Number);
+        entries.forEach((entry) => {
+          const [startH, startM] = entry.startTime.split(":").map(Number);
+          const [endH, endM] = entry.endTime.split(":").map(Number);
           const hours = (endH * 60 + endM - (startH * 60 + startM)) / 60;
           totalHours += hours;
         });
@@ -98,7 +100,7 @@ exports.getAllResources = async (req, res) => {
       }
 
       // Add assignedHours to each lecturer
-      const enhancedResources = resources.map(resource => ({
+      const enhancedResources = resources.map((resource) => ({
         ...resource.toObject(),
         assignedHours: assignedHoursMap[resource._id] || 0,
       }));
@@ -170,7 +172,8 @@ exports.updateResource = async (req, res) => {
     const duplicate = await Resource.findOne({
       _id: { $ne: req.params.id },
       resourceType,
-      lecturerTitle: resourceType === "lecturer" ? lecturerTitle?.trim() || "" : "",
+      lecturerTitle:
+        resourceType === "lecturer" ? lecturerTitle?.trim() || "" : "",
       name: name.trim(),
       code: code?.trim() || "",
       batchNo: batchNo?.trim() || "",

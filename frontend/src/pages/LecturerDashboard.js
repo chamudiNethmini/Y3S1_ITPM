@@ -13,13 +13,19 @@ function LecturerDashboard() {
   const [loading, setLoading] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState("");
 
+  // ========== WORKLOAD HOURS BY DESIGNATION ==========
   const workloadHours = {
-    "Prof.": 8,
-    "Dr.": 10,
-    "Mr.": 15,
-    "Ms.": 15,
+    Instructor: 22,
+    "Assistant Lecturer": 16,
+    Lecturer: 15,
+    "Senior Lecturer": 12,
+    "Senior Lecturer (Higher Grade)": 12,
+    "Assistant Professor": 12,
+    "Associate Professor": 10,
+    Professor: 8,
   };
 
+  // ========== STATIC BATCHES ==========
   const staticBatches = [
     "Y1.S2.WE.IT.01",
     "Y1.S2.WE.IT.02",
@@ -152,238 +158,7 @@ function LecturerDashboard() {
     "Y4.S2.WD.ISE.01",
   ];
 
-  const staticLecturerNames = [
-    "Prof. Nuwan Kodagoda",
-    "Prof. Pradeep Abeygunawardhana",
-    "Prof. Koliya Pulasinghe",
-    "Prof. Mahesha Kapurubandara",
-    "Prof. Samantha Thelijjagoda",
-    "Prof. Anuradha Karunasena",
-    "Prof. Dasuni Nawinna",
-    "Prof. Anuradha Jayakody",
-    "Prof. Samantha Rajapakshe",
-    "Prof. Dilshan De Silva",
-    "Dr. Dharshana Kasthurirathne",
-    "Dr. Malitha Wijesundara",
-    "Dr. Kalpani Manathunga",
-    "Dr. Jayantha Amararachchi",
-    "Dr. Jeewanee Bamunusinghe",
-    "Dr. Harinda Sahadeva Fernando",
-    "Dr. Bhagya Nathali Silva",
-    "Dr. Sanvitha Kasturiarachchi",
-    "Dr. Nimal Ratnayake",
-    "Dr. Lakmini Abeywardhana",
-    "Dr. Kapila Disanayaka",
-    "Dr. Junius Anjana Amaranath",
-    "Dr. Mahima Milinda Alwis Weerasinghe",
-    "Dr. Prasanna Sumathipala",
-    "Dr. Dinuka Wijendra",
-    "Mr. Jagath Wickramarathne",
-    "Ms. Uthpala Samarakoon",
-    "Mr. Amila Senarathne",
-    "Ms. Sanjeevi Chandrasiri",
-    "Ms. Shashika Lokuliyana",
-    "Mr. Kavinga Yapa Abeywardene",
-    "Mr. Aruna Ishara Gamage",
-    "Ms. Hansika Mahaadikara",
-    "Ms. Lokesha Prasadini",
-    "Mr. Nelum Chathuranga Amarasena",
-    "Ms. Suranjini Silva",
-    "Mr. Jeewaka Perera",
-    "Ms. Thilini Jayalath",
-    "Ms. Jenny Kishara",
-    "Mr. Paramabadu Wickramasuriyage Sarath",
-    "Mr. Sanjeeva Perera",
-    "Ms. Chathurangika Kahandawarachchi",
-    "Ms. Gaya Thamali Dassanayake",
-    "Mr. Kanishka Yapa",
-    "Ms. Hansi de Silva",
-    "Mr. Vishan Danura Jayasinghearachchi",
-    "Mr. Didula Chamara Thanaweera Arachchi",
-    "Ms. Narmada Gamage",
-    "Mr. Samadhi Chathuranga Rathnayake",
-    "Ms. Buddhima Attanayaka",
-    "Ms. Dinithi Sarithma Pandithage",
-    "Ms. Vindhya Dilini Kalapuge",
-    "Ms. Ishara Weerathunga",
-    "Ms. Thamali Bandara Kelegama",
-    "Mr. Indunil Vishvajith Daluwatte",
-    "Mr. Uditha Dharmakeerthi",
-    "Mr. Madu Rathnayake",
-    "Mr. Suresh Niroshan Fernando",
-    "Ms. Shalini Rupasinghe",
-    "Ms. Karthiga Rajendran",
-    "Ms. Poorna Gayathri Panduwawala",
-    "Ms. Poojani Gunathilake",
-    "Ms. Rangi Prarthana Babarande Liyanage",
-    "Ms. Aruni Premarathne",
-    "Ms. Akshi Himahansi De Silva",
-    "Ms. Kaushika Kavindi Kahatapitiya",
-    "Ms. Mihiri Samaraweera",
-    "Ms. Nimasha Nimmi Chinthaka",
-    "Ms. Sasini Hathurusinghe",
-    "Ms. Tharushi Rubasinghe",
-    "Mr. Deemantha Nayanajith Siriwardana",
-    "Ms. Kaushalya Gayathri Rajapakse",
-    "Ms. Kaveesha Menuji Wickramarathne",
-    "Ms. Chamali Pabasara",
-    "Ms. Thisara Shyamalee",
-    "Ms. Aparna Jayawardena",
-    "Ms. Malithi Nawarathne",
-    "Mr. Tharaniyawarma Kumaralingam",
-    "Ms. Sandeepa Gamage",
-    "Mr. Dinith Primal",
-    "Mr. Hanojhan Rajahrajasingh",
-    "Ms. Ayesha Dilhani Wijesooriya",
-    "Ms. Kalna Vihara Peiris",
-    "Mr. Ashvinda Iddamalgoda",
-    "Mr. Eishan Weerasinghe",
-    "Ms. Madusha Sulakshi Weerasooriya",
-    "Ms. Pubudika Wijesundara",
-    "Ms. Shashini Kumarasinghe",
-    "Ms. Samali Amarasekara",
-    "Mr. Amila Alexander",
-    "Ms. Heshani Sathmini",
-    "Ms. Chathurya Kumarapperuma",
-    "Ms. Osuri Vikma Dunuwila",
-    "Ms. Chathushki Chathumali",
-    "Ms. Nushkan Nismi",
-    "Ms. Fathima Fanoon Raheem",
-    "Mr. Asiri Gawesha",
-    "Ms. Madumini Gunaratne",
-    "Ms. Heshani Sathmini Bopage",
-    "Ms. Nilakma Welgama",
-    "Ms. Lakshi Lochana Nanayakkara",
-    "Ms. Anjalie Gamage",
-    "Mr. Dammika De silva",
-    "Ms. Geethanjali Wimalaratne",
-    "Ms. Manori Gamage",
-    "Mr. S.M.B.Harshanath",
-    "Ms. Nilushi Dias",
-    "Ms. Malika Lakmali",
-    "Ms. Uthmani Thathsarani",
-    "Ms. Mathishi Adya Dissanayake",
-    "Ms. Sadeepa Dushanthi Kuruppu",
-    "Ms. Dilani Lunugalage",
-    "Ms. Kalani Kasthuriarachchi",
-    "Ms. Dilini Edirisingha",
-    "Ms. Nirodha Kiriella",
-    "Ms. Maheshi Jayasinghe",
-    "Mr. Abisheka Withanage",
-    "Ms. Nadeema Hansani",
-    "Ms. Rasani Wijerathna",
-    "Ms. Bawanthi Gunasekara",
-    "Ms. Mokshika Perera",
-    "Ms. Dayani Kaushalya",
-    "Ms. Devmini Poornima",
-    "Mr. Malshan Gunasekara",
-    "Mr. Sahan Dhananjaya",
-    "Ms. Nipuni Jayarathna",
-    "Ms. Wathsala Rathnayake",
-    "Ms. Chamina Sewwandi",
-    "Ms. Helani Herath",
-    "Ms. Thriyashi Silva",
-    "Ms. Nipuni Amarasighe",
-    "Ms. Kaveesha Amandi",
-    "Ms. Hashini Rajapaksha",
-    "Ms. Hiruni Peiris",
-    "Ms. Kasuni Navodana",
-    "Ms. Nadeeshani Wickramage",
-    "Mr. Tharindu Wirasagoda",
-    "Mr. Sharaf Mawjood",
-    "Ms. Dinithi Dilshani",
-    "Ms. Koshila Muthumali",
-    "Ms. Maneesha Weragoda",
-    "Ms. Dulya Perera",
-    "Ms. Subodha Subasingha",
-    "Ms. Tasikala Rathnayake",
-    "Ms. Chalani Bhagya",
-    "Ms. Hasini Herath",
-    "Ms. Cheshani Peiris",
-    "Ms. Devindi Perera",
-    "Ms. Sameeri Subasinghe",
-    "Ms. Sasangi Harischandra",
-    "Ms. Malki Kumarage",
-    "Ms. Prabhashini Jayasinghe",
-    "Ms. Seshmi Senadheera",
-    "Mr. Pasidhu Gulawita",
-    "Ms. Jasmi Gunasekara",
-    "Ms. Kugathasan Vethurja",
-    "Mr. Yashmika Saparamadu",
-    "Ms. Hiruni Herath",
-    "Mr. Tharusha Perera",
-    "Ms. Minuli Samaraweera",
-    "Ms. Sugandhi Kalansooriya",
-    "Ms. Sajani Kolabage",
-    "Mr. Theshan Senanayake",
-    "Ms. Prashanthi Dissanayake",
-    "Ms. Santhushi Hemachandra",
-    "Ms. Harini Gunawardana",
-    "Ms. Piumi Navoda",
-    "Mr. Bhanuka Edirisinghe",
-    "Mr. Janidu Illesinghe",
-    "Mr. Jaliya Wijayaraja",
-    "Ms. Gayanthika Dayananda",
-    "Ms. Mayumi Maleesha",
-    "Ms. Sakuni Samara",
-    "Mr. Sandun Meesara",
-    "Mr. Muditha Kumara",
-    "Ms. Nimesha Shalika",
-    "Ms. Chanudi Tharushika",
-    "Mr. Chalana Janith",
-    "Ms. Vijini Tharushika",
-    "Mr. Vishwa Gurusinghe",
-    "Ms. Umayangana Wijayasiri",
-    "Mr. Ranga Samaraweera",
-    "Ms. Sashini Warnasooriya",
-    "Ms. Maleesha Shavindi",
-    "Mr. Chris Perera",
-    "Ms. Minoli Rashmitha",
-    "Mr. Dinusha Ukwaththage",
-    "Ms. Isuri Yapa",
-    "Ms. Saara Kaizer",
-    "Mr. Manuka Rashen",
-    "Ms. Shehani Dehipola",
-    "Mr. Shashik Dulan",
-    "Ms. Kaushalya Premarathne",
-    "Ms. Iresha Bodhinayayana",
-    "Mr. Sachintha Weththasinghe",
-    "Mr. Saadhiq Hassaan",
-    "Ms. Madhawie Sewwandi",
-    "Mr. Dhanushka Balasingham",
-    "Ms. Pavani Liyanage",
-    "Mr. Charith Dabare",
-    "Ms. Anuththara Hettiarachchi",
-    "Ms. Yasassi Suriyabandara",
-    "Ms. Lashika Chamini",
-    "Ms. Hansika Peiris",
-    "Mr. Dinal Senadheera",
-    "Ms. Naduni Ranatunga",
-    "VL IT 01",
-    "VL IT 02",
-    "VL IT 03",
-    "VL DS 01",
-    "VL DS 02",
-    "VL DS 03",
-    "VL SE 01",
-    "VL SE 02",
-    "VL SE 03",
-    "VL IM 01",
-    "VL IM 02",
-    "VL IM 03",
-    "VL CSNE 01",
-    "VL CSNE 02",
-    "VL CSNE 03",
-    "VL CS 01",
-    "VL CSN 02",
-    "VL CS 03",
-    "VL ISE 01",
-    "VL ISE 02",
-    "VL ISE 03",
-    "INS 01",
-    "INS 02",
-  ];
-
+  // ========== LOCATIONS ==========
   const locations = [
     "A304",
     "A503",
@@ -459,11 +234,11 @@ function LecturerDashboard() {
   const [sessionSearch, setSessionSearch] = useState({});
   const [openDropdown, setOpenDropdown] = useState(null);
 
-  // ── Fetch ───────────────────────────────────────────────────────────────────
+  // ========== FETCH TIMETABLE ==========
   const fetchTimetable = async () => {
     try {
       setLoading(true);
-      const res = await API.get("/timetable/lic");
+      const res = await API.get("/timetable-entries/lic");
       setTimetable(res.data);
     } catch {
       alert("Failed to load timetable");
@@ -472,6 +247,7 @@ function LecturerDashboard() {
     }
   };
 
+  // ========== FETCH LECTURERS ==========
   const fetchLecturers = async () => {
     try {
       const res = await API.get("/resources?type=lecturer");
@@ -486,7 +262,7 @@ function LecturerDashboard() {
     fetchLecturers();
   }, []);
 
-  // ── Batch filter ────────────────────────────────────────────────────────────
+  // ========== BATCH FILTER ==========
   const filteredTimetable = useMemo(() => {
     if (!selectedBatch) return timetable;
     return timetable.filter((entry) => {
@@ -498,7 +274,7 @@ function LecturerDashboard() {
     });
   }, [timetable, selectedBatch]);
 
-  // ── Time slots & grouped sessions (from filteredTimetable) ─────────────────
+  // ========== TIME SLOTS ==========
   const timeSlots = useMemo(() => {
     const unique = new Map();
     filteredTimetable.forEach((entry) => {
@@ -511,6 +287,7 @@ function LecturerDashboard() {
     );
   }, [filteredTimetable]);
 
+  // ========== GROUPED SESSIONS ==========
   const groupedSessions = useMemo(() => {
     const grouped = {};
     weekdays.forEach((day) => {
@@ -530,7 +307,7 @@ function LecturerDashboard() {
     return grouped;
   }, [filteredTimetable, timeSlots]);
 
-  // ── Resource name helper ────────────────────────────────────────────────────
+  // ========== RESOURCE NAME HELPER ==========
   const getResourceName = (resource) => {
     if (!resource) return "N/A";
     if (typeof resource === "string") return resource;
@@ -551,18 +328,13 @@ function LecturerDashboard() {
     return resource.name || "N/A";
   };
 
+  // ========== LECTURER OPTIONS FOR DROPDOWN ==========
   const lecturerOptions = useMemo(
     () =>
-      lecturers.map((resource) => {
-        const maxHours = workloadHours[resource.lecturerTitle] || 0;
-        const assignedHours = resource.assignedHours || 0;
-        const remaining = maxHours - assignedHours;
-        return {
-          id: resource._id,
-          label: `${getResourceName(resource)} (Max: ${maxHours}hrs, Assigned: ${assignedHours}hrs, Remaining: ${remaining}hrs)`,
-          remainingHours: remaining,
-        };
-      }),
+      lecturers.map((resource) => ({
+        id: resource._id,
+        label: getResourceName(resource),
+      })),
     [lecturers],
   );
 
@@ -573,28 +345,25 @@ function LecturerDashboard() {
     );
   };
 
-  // ── Workload ────────────────────────────────────────────────────────────────
-  const calculateSessionHours = (startTime, endTime) => {
-    const [startH, startM] = startTime.split(':').map(Number);
-    const [endH, endM] = endTime.split(':').map(Number);
-    const startMinutes = startH * 60 + startM;
-    const endMinutes = endH * 60 + endM;
-    return (endMinutes - startMinutes) / 60; // hours
-  };
-
+  // ========== CALCULATE REMAINING HOURS ==========
   const calculateRemainingHours = (lecturerId) => {
     const lec = lecturers.find((l) => l._id === lecturerId);
     if (!lec || !lec.lecturerTitle) return 0;
-    return (workloadHours[lec.lecturerTitle] || 0) - (lec.assignedHours || 0);
+
+    const maxHours = workloadHours[lec.lecturerTitle] || 0;
+    const assignedHours = lec.assignedHours || 0;
+
+    return Math.max(0, maxHours - assignedHours);
   };
 
-  // ── Assignment ──────────────────────────────────────────────────────────────
+  // ========== HANDLE ASSIGN CHANGE ==========
   const handleAssignChange = (id, lecturer) => {
     setAssignments((prev) => ({ ...prev, [id]: lecturer }));
     setOpenDropdown(null);
     setSessionSearch((prev) => ({ ...prev, [id]: "" }));
   };
 
+  // ========== SAVE ASSIGNMENT ==========
   const handleSave = async (id) => {
     const selectedLecturer = assignments[id];
     if (!selectedLecturer?.id) {
@@ -608,16 +377,14 @@ function LecturerDashboard() {
       return;
     }
 
-    // Check workload
-    const sessionHours = calculateSessionHours(entry.startTime, entry.endTime);
-    const remainingHours = calculateRemainingHours(selectedLecturer.id);
-    if (remainingHours < sessionHours) {
-      alert(`Lecturer does not have enough remaining hours. Required: ${sessionHours} hrs, Available: ${remainingHours} hrs`);
+    // Check remaining hours
+    if (calculateRemainingHours(selectedLecturer.id) <= 0) {
+      alert("This lecturer has no remaining hours available");
       return;
     }
 
     try {
-      await API.put(`/timetable/${id}`, {
+      await API.put(`/timetable-entries/${id}`, {
         module: entry.module?._id || entry.module,
         lecturer: selectedLecturer.id,
         batchGroup: entry.batchGroup?._id || entry.batchGroup,
@@ -625,7 +392,7 @@ function LecturerDashboard() {
         day: entry.day,
         startTime: entry.startTime,
         endTime: entry.endTime,
-        status: entry.status || "draft",
+        status: entry.status || "sent",
       });
       alert("Lecturer assigned successfully ✅");
       fetchTimetable();
@@ -635,13 +402,16 @@ function LecturerDashboard() {
     }
   };
 
+  // ========== SEND TO ADMIN ==========
   const handleSendToAdmin = async () => {
     if (!selectedBatch) {
       alert("Please select a batch to send");
       return;
     }
     try {
-      await API.put("/timetable/send-to-admin", { batchGroup: selectedBatch });
+      await API.put("/timetable-entries/send-to-admin", {
+        batchGroup: selectedBatch,
+      });
       alert("Timetable sent to Admin successfully ✅");
       fetchTimetable();
     } catch (error) {
@@ -651,7 +421,7 @@ function LecturerDashboard() {
     }
   };
 
-  // ── Hall availability ───────────────────────────────────────────────────────
+  // ========== HALL AVAILABILITY ==========
   const handleCheckAvailability = () => {
     if (!selectedHall || !selectedDay || !selectedTime) {
       alert("Please select hall, day, and time");
@@ -659,9 +429,9 @@ function LecturerDashboard() {
     }
     const clash = timetable.some(
       (item) =>
-        item.hall === selectedHall &&
+        item.hall?.name === selectedHall &&
         item.day === selectedDay &&
-        item.time === selectedTime,
+        `${item.startTime} - ${item.endTime}` === selectedTime,
     );
     setHallStatus(
       clash
@@ -670,19 +440,18 @@ function LecturerDashboard() {
     );
   };
 
-  // ── Close dropdown on outside click ────────────────────────────────────────
+  // ========== CLOSE DROPDOWN ON OUTSIDE CLICK ==========
   useEffect(() => {
     const handler = () => setOpenDropdown(null);
     document.addEventListener("click", handler);
     return () => document.removeEventListener("click", handler);
   }, []);
 
-  // ── Searchable dropdown per session ────────────────────────────────────────
   return (
     <>
       <Navbar />
       <div className="lecturer-page">
-        {/* HERO */}
+        {/* ========== HERO ========== */}
         <div className="lecturer-hero">
           <h1>LIC Dashboard</h1>
           <p>
@@ -691,7 +460,7 @@ function LecturerDashboard() {
           </p>
         </div>
 
-        {/* STATS */}
+        {/* ========== STATS CARDS ========== */}
         <div className="stats-grid">
           <div className="stat-card stat-blue">
             <span className="stat-title">Total Lecturers</span>
@@ -707,7 +476,7 @@ function LecturerDashboard() {
           </div>
         </div>
 
-        {/* SEND TO ADMIN */}
+        {/* ========== SEND TO ADMIN ========== */}
         {selectedBatch && filteredTimetable.length > 0 && (
           <div className="lecturer-card">
             <div className="section-header">
@@ -727,7 +496,7 @@ function LecturerDashboard() {
           </div>
         )}
 
-        {/* TICKET */}
+        {/* ========== TICKET SECTION ========== */}
         <div className="lecturer-card">
           <div className="section-header">
             <div>
@@ -764,7 +533,7 @@ function LecturerDashboard() {
           </div>
         </div>
 
-        {/* SUPPORT INFO */}
+        {/* ========== SUPPORT INFO ========== */}
         <div className="lecturer-card">
           <div className="section-header">
             <div>
@@ -809,7 +578,7 @@ function LecturerDashboard() {
           </div>
         </div>
 
-        {/* WORKLOAD */}
+        {/* ========== LECTURER WORKLOAD TABLE ========== */}
         <div className="lecturer-card">
           <h3>Lecturer Workload Overview</h3>
           <div className="table-wrapper">
@@ -817,8 +586,7 @@ function LecturerDashboard() {
               <thead>
                 <tr>
                   <th>Lecturer Name</th>
-                  <th>Module Code</th>
-                  <th>Title</th>
+                  <th>Designation</th>
                   <th>Max Hours</th>
                   <th>Assigned Hours</th>
                   <th>Remaining Hours</th>
@@ -827,18 +595,32 @@ function LecturerDashboard() {
               <tbody>
                 {lecturers.length > 0 ? (
                   lecturers.map((lec) => {
-                    const maxHours = workloadHours[lec.lecturerTitle] || 0;
+                    const designation = lec.lecturerTitle || "Not Set";
+                    const maxHours = workloadHours[designation] || 0;
                     const assignedHours = lec.assignedHours || 0;
-                    const remainingHours = maxHours - assignedHours;
+                    const remainingHours = Math.max(
+                      0,
+                      maxHours - assignedHours,
+                    );
+
                     return (
                       <tr key={lec._id}>
                         <td>
-                          {lec.lecturerTitle} {lec.name}
+                          <strong>{lec.name}</strong>
                         </td>
-                        <td>{lec.moduleCode || "-"}</td>
-                        <td>{lec.lecturerTitle || "Not Set"}</td>
-                        <td>{maxHours} hrs</td>
-                        <td>{assignedHours} hrs</td>
+                        <td>
+                          <span className="designation-badge">
+                            {designation}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="max-hours">{maxHours} hrs</span>
+                        </td>
+                        <td>
+                          <span className="assigned-hours">
+                            {assignedHours.toFixed(1)} hrs
+                          </span>
+                        </td>
                         <td>
                           <span
                             className={
@@ -847,7 +629,7 @@ function LecturerDashboard() {
                                 : "hours-full"
                             }
                           >
-                            {remainingHours} hrs
+                            {remainingHours.toFixed(1)} hrs
                           </span>
                         </td>
                       </tr>
@@ -855,7 +637,16 @@ function LecturerDashboard() {
                   })
                 ) : (
                   <tr>
-                    <td colSpan="6">No lecturers found</td>
+                    <td
+                      colSpan="5"
+                      style={{
+                        textAlign: "center",
+                        padding: "20px",
+                        color: "#999",
+                      }}
+                    >
+                      No lecturers found
+                    </td>
                   </tr>
                 )}
               </tbody>
@@ -863,28 +654,17 @@ function LecturerDashboard() {
           </div>
         </div>
 
-        {/* ── TIMETABLE GRID ── */}
+        {/* ========== TIMETABLE GRID ========== */}
         <div className="lecturer-card">
           <h3>Assign Lecturers to Timetable</h3>
 
           {/* BATCH FILTER */}
-          <div
-            style={{
-              marginBottom: "16px",
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              flexWrap: "wrap",
-            }}
-          >
-            <label style={{ fontWeight: "600", fontSize: "14px" }}>
-              Filter by Batch:
-            </label>
+          <div className="batch-filter-row">
+            <label>Filter by Batch:</label>
             <select
               className="hall-select"
               value={selectedBatch}
               onChange={(e) => setSelectedBatch(e.target.value)}
-              style={{ minWidth: "220px" }}
             >
               <option value="">— All Batches —</option>
               {staticBatches.map((b) => (
@@ -894,34 +674,26 @@ function LecturerDashboard() {
               ))}
             </select>
             {selectedBatch && (
-              <button
-                className="resource-secondary-btn"
-                onClick={() => setSelectedBatch("")}
-                style={{ padding: "6px 14px", fontSize: "13px" }}
-              >
-                Clear Filter
-              </button>
-            )}
-            {selectedBatch && filteredTimetable.length > 0 && (
-              <button
-                className="primary-btn"
-                onClick={handleSendToAdmin}
-                style={{ padding: "8px 16px", fontSize: "13px" }}
-              >
-                Send LIC Timetable to Admin
-              </button>
-            )}
-            {selectedBatch && (
-              <span style={{ fontSize: "13px", color: "#666" }}>
-                Showing {filteredTimetable.length} session(s) for{" "}
-                <strong>{selectedBatch}</strong>
-              </span>
+              <>
+                <button
+                  className="resource-secondary-btn"
+                  onClick={() => setSelectedBatch("")}
+                >
+                  Clear Filter
+                </button>
+                <span className="filtered-count">
+                  Showing {filteredTimetable.length} session(s) for{" "}
+                  <strong>{selectedBatch}</strong>
+                </span>
+              </>
             )}
           </div>
 
           <div className="table-wrapper timetable-grid-wrapper">
             {loading ? (
-              <p>Loading...</p>
+              <p style={{ padding: "20px", textAlign: "center" }}>
+                Loading timetable...
+              </p>
             ) : (
               <table className="lic-table timetable-grid-table">
                 <thead>
@@ -993,7 +765,7 @@ function LecturerDashboard() {
                                             )}
                                           </div>
 
-                                          {/* Searchable dropdown */}
+                                          {/* SEARCHABLE DROPDOWN */}
                                           <div
                                             style={{
                                               position: "relative",
@@ -1030,59 +802,24 @@ function LecturerDashboard() {
                                               }}
                                             />
                                             {isOpen && (
-                                              <div
-                                                style={{
-                                                  position: "absolute",
-                                                  top: "100%",
-                                                  left: 0,
-                                                  right: 0,
-                                                  maxHeight: "180px",
-                                                  overflowY: "auto",
-                                                  background: "#fff",
-                                                  border: "1px solid #ddd",
-                                                  borderRadius: "6px",
-                                                  zIndex: 999,
-                                                  boxShadow:
-                                                    "0 4px 12px rgba(0,0,0,0.12)",
-                                                }}
-                                              >
+                                              <div className="dropdown-menu">
                                                 {filtered.length > 0 ? (
                                                   filtered.map((lecturer) => (
                                                     <div
                                                       key={lecturer.id}
+                                                      className="dropdown-item"
                                                       onClick={() =>
                                                         handleAssignChange(
                                                           sid,
                                                           lecturer,
                                                         )
                                                       }
-                                                      style={{
-                                                        padding: "7px 12px",
-                                                        cursor: "pointer",
-                                                        fontSize: "12px",
-                                                        borderBottom:
-                                                          "1px solid #f0f0f0",
-                                                      }}
-                                                      onMouseEnter={(e) =>
-                                                        (e.currentTarget.style.background =
-                                                          "#f5f7ff")
-                                                      }
-                                                      onMouseLeave={(e) =>
-                                                        (e.currentTarget.style.background =
-                                                          "#fff")
-                                                      }
                                                     >
                                                       {lecturer.label}
                                                     </div>
                                                   ))
                                                 ) : (
-                                                  <div
-                                                    style={{
-                                                      padding: "8px 12px",
-                                                      color: "#999",
-                                                      fontSize: "12px",
-                                                    }}
-                                                  >
+                                                  <div className="dropdown-empty">
                                                     No results found
                                                   </div>
                                                 )}
@@ -1136,7 +873,7 @@ function LecturerDashboard() {
           </div>
         </div>
 
-        {/* HALL AVAILABILITY */}
+        {/* ========== HALL AVAILABILITY CHECKER ========== */}
         <div className="lecturer-card">
           <h3>Check Hall Availability</h3>
           <div className="hall-checker">
@@ -1183,11 +920,7 @@ function LecturerDashboard() {
               Check Availability
             </button>
           </div>
-          {hallStatus && (
-            <div style={{ marginTop: "14px", fontWeight: "600" }}>
-              {hallStatus}
-            </div>
-          )}
+          {hallStatus && <div className="hall-status-result">{hallStatus}</div>}
         </div>
       </div>
     </>
