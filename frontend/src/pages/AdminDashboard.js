@@ -967,7 +967,7 @@ function AdminDashboard() {
           {tickets.length === 0 ? (
             <p className="empty-message">No tickets received</p>
           ) : (
-            <div className="table-wrapper">
+            <div className="table-wrapper tickets-table-wrapper">
               <table className="admin-table">
                 <thead>
                   <tr>

@@ -86,6 +86,30 @@
   margin-bottom: 24px;
 }
 
+.tickets-table-wrapper {
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.tickets-table-wrapper::-webkit-scrollbar {
+  width: 10px;
+}
+
+.tickets-table-wrapper::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 8px;
+}
+
+.tickets-table-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+}
+
+.tickets-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
 .admin-card h3 {
   margin: 0 0 20px 0;
   font-size: 20px;
