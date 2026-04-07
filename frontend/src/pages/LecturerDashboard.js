@@ -14,14 +14,10 @@ function LecturerDashboard() {
   const [selectedBatch, setSelectedBatch] = useState("");
 
   const workloadHours = {
-    Instructor: 22,
-    "Assistant Lecturer": 16,
-    Lecturer: 15,
-    "Senior Lecturer": 12,
-    "Senior Lecturer (Higher Grade)": 12,
-    "Assistant Professor": 12,
-    "Associate Professor": 10,
-    Professor: 8,
+    "Prof.": 8,
+    "Dr.": 10,
+    "Mr.": 15,
+    "Ms.": 15,
   };
 
   const staticBatches = [
@@ -557,10 +553,16 @@ function LecturerDashboard() {
 
   const lecturerOptions = useMemo(
     () =>
-      lecturers.map((resource) => ({
-        id: resource._id,
-        label: getResourceName(resource),
-      })),
+      lecturers.map((resource) => {
+        const maxHours = workloadHours[resource.lecturerTitle] || 0;
+        const assignedHours = resource.assignedHours || 0;
+        const remaining = maxHours - assignedHours;
+        return {
+          id: resource._id,
+          label: `${getResourceName(resource)} (Max: ${maxHours}hrs, Assigned: ${assignedHours}hrs, Remaining: ${remaining}hrs)`,
+          remainingHours: remaining,
+        };
+      }),
     [lecturers],
   );
 
@@ -572,10 +574,18 @@ function LecturerDashboard() {
   };
 
   // ── Workload ────────────────────────────────────────────────────────────────
+  const calculateSessionHours = (startTime, endTime) => {
+    const [startH, startM] = startTime.split(':').map(Number);
+    const [endH, endM] = endTime.split(':').map(Number);
+    const startMinutes = startH * 60 + startM;
+    const endMinutes = endH * 60 + endM;
+    return (endMinutes - startMinutes) / 60; // hours
+  };
+
   const calculateRemainingHours = (lecturerId) => {
     const lec = lecturers.find((l) => l._id === lecturerId);
-    if (!lec || !lec.designation) return 0;
-    return (workloadHours[lec.designation] || 0) - (lec.assignedHours || 0);
+    if (!lec || !lec.lecturerTitle) return 0;
+    return (workloadHours[lec.lecturerTitle] || 0) - (lec.assignedHours || 0);
   };
 
   // ── Assignment ──────────────────────────────────────────────────────────────
@@ -595,6 +605,14 @@ function LecturerDashboard() {
     const entry = timetable.find((item) => item._id === id);
     if (!entry) {
       alert("Session not found");
+      return;
+    }
+
+    // Check workload
+    const sessionHours = calculateSessionHours(entry.startTime, entry.endTime);
+    const remainingHours = calculateRemainingHours(selectedLecturer.id);
+    if (remainingHours < sessionHours) {
+      alert(`Lecturer does not have enough remaining hours. Required: ${sessionHours} hrs, Available: ${remainingHours} hrs`);
       return;
     }
 
@@ -800,7 +818,7 @@ function LecturerDashboard() {
                 <tr>
                   <th>Lecturer Name</th>
                   <th>Module Code</th>
-                  <th>Designation</th>
+                  <th>Title</th>
                   <th>Max Hours</th>
                   <th>Assigned Hours</th>
                   <th>Remaining Hours</th>
@@ -809,7 +827,7 @@ function LecturerDashboard() {
               <tbody>
                 {lecturers.length > 0 ? (
                   lecturers.map((lec) => {
-                    const maxHours = workloadHours[lec.designation] || 0;
+                    const maxHours = workloadHours[lec.lecturerTitle] || 0;
                     const assignedHours = lec.assignedHours || 0;
                     const remainingHours = maxHours - assignedHours;
                     return (
@@ -818,7 +836,7 @@ function LecturerDashboard() {
                           {lec.lecturerTitle} {lec.name}
                         </td>
                         <td>{lec.moduleCode || "-"}</td>
-                        <td>{lec.designation || "Not Set"}</td>
+                        <td>{lec.lecturerTitle || "Not Set"}</td>
                         <td>{maxHours} hrs</td>
                         <td>{assignedHours} hrs</td>
                         <td>
