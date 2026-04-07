@@ -4,14 +4,17 @@ import { useNavigate } from "react-router-dom";
 import "../styles/AdminDashboard.css";
 import Navbar from "../components/Navbar";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 
 function AdminDashboard() {
+  const navigate = useNavigate();
+
+  // ========== STATE ==========
   const [users, setUsers] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [tickets, setTickets] = useState([]);
   const [ticketReply, setTicketReply] = useState({});
-  const navigate = useNavigate();
+  const [timetable, setTimetable] = useState([]);
+  const [selectedTimetableBatch, setSelectedTimetableBatch] = useState("");
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -22,13 +25,9 @@ function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("all");
   const [moduleSearch, setModuleSearch] = useState("");
-  const [timetable, setTimetable] = useState([]);
-  const [selectedTimetableBatch, setSelectedTimetableBatch] = useState("");
-
-  // PUBLISH TIMETABLE STATE
   const [publishMessage, setPublishMessage] = useState("");
 
-  // ================= MODULE CODES =================
+  // ========== MODULE CODES ==========
   const moduleCodes = [
     "IE1030 - DCN",
     "IT1120 - IP",
@@ -249,13 +248,11 @@ function AdminDashboard() {
     "IT2150 - ITP",
   ];
 
-  // Filter module codes based on search
   const filteredModules = moduleCodes.filter((module) =>
     module.toLowerCase().includes(moduleSearch.toLowerCase()),
   );
 
-  // ================= FETCH =================
-
+  // ========== FETCH DATA ==========
   const fetchUsers = async () => {
     try {
       const res = await API.get("/auth/all-users");
@@ -285,13 +282,28 @@ function AdminDashboard() {
 
   const fetchTimetable = async () => {
     try {
-      const res = await API.get("/timetable");
-      console.log("Fetched ALL timetable entries:", res.data);
+      const res = await API.get("/timetable-entries");
       setTimetable(res.data);
     } catch (error) {
       console.log("Error fetching timetable:", error);
     }
   };
+
+  useEffect(() => {
+    fetchUsers();
+    fetchAuditLogs();
+    fetchTickets();
+    fetchTimetable();
+
+    const interval = setInterval(() => {
+      fetchTimetable();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // ========== COMPUTED VALUES ==========
+  const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
   const batchOptions = useMemo(() => {
     return [
@@ -321,8 +333,6 @@ function AdminDashboard() {
     });
   }, [timetable, selectedTimetableBatch]);
 
-  const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-
   const timeSlots = useMemo(() => {
     const unique = new Map();
     filteredTimetable.forEach((entry) => {
@@ -346,6 +356,122 @@ function AdminDashboard() {
     return grouped;
   }, [filteredTimetable]);
 
+  const filteredUsers = users.filter((user) => {
+    const matchesRole = filterRole === "all" || user.role === filterRole;
+    const search = searchTerm.toLowerCase();
+    const matchesSearch =
+      user.name.toLowerCase().includes(search) ||
+      user.email.toLowerCase().includes(search) ||
+      user.role.toLowerCase().includes(search);
+    return matchesRole && matchesSearch;
+  });
+
+  const totalUsers = users.length;
+  const activeUsers = users.filter((user) => user.status === "active").length;
+  const suspendedUsers = users.filter(
+    (user) => user.status === "suspended",
+  ).length;
+
+  // ========== CREATE USER ==========
+  const handleCreateUser = async () => {
+    if (!name || !email || !password) {
+      alert("All fields are required");
+      return;
+    }
+
+    if (role === "lic" && !moduleCode) {
+      alert("Module code is required for LIC users");
+      return;
+    }
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+      alert("Invalid email format");
+      return;
+    }
+
+    if (password.length < 8 || password.length > 12) {
+      alert("Password must be between 8 and 12 characters");
+      return;
+    }
+
+    try {
+      await API.post("/auth/create-user", {
+        name,
+        email,
+        password,
+        role,
+        moduleCode: role === "lic" ? moduleCode : undefined,
+      });
+
+      alert("User created successfully");
+      setName("");
+      setEmail("");
+      setPassword("");
+      setRole("lic");
+      setModuleCode("");
+      setModuleSearch("");
+      fetchUsers();
+      fetchAuditLogs();
+    } catch (error) {
+      alert(error.response?.data?.message || "Error creating user");
+    }
+  };
+
+  // ========== PUBLISH TIMETABLE ==========
+  const handlePublishTimetable = async () => {
+    if (!publishMessage.trim()) {
+      alert("Please enter a message");
+      return;
+    }
+
+    if (publishMessage.length < 1 || publishMessage.length > 100) {
+      alert("Message must be between 1 and 100 characters");
+      return;
+    }
+
+    try {
+      await API.post("/timetable-entries/publish", {
+        message: publishMessage,
+      });
+
+      alert("Timetable published successfully ✅");
+      setPublishMessage("");
+      fetchAuditLogs();
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to publish timetable");
+    }
+  };
+
+  // ========== DELETE USER ==========
+  const handleDelete = async (id) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this user?",
+    );
+    if (!confirmDelete) return;
+
+    try {
+      await API.delete(`/auth/delete-user/${id}`);
+      fetchUsers();
+      fetchAuditLogs();
+    } catch (error) {
+      alert(error.response?.data?.message || "Error deleting user");
+    }
+  };
+
+  // ========== CHANGE STATUS ==========
+  const handleStatusChange = async (id, currentStatus) => {
+    try {
+      const newStatus = currentStatus === "active" ? "suspended" : "active";
+      await API.put(`/auth/update-status/${id}`, { status: newStatus });
+      fetchUsers();
+      fetchAuditLogs();
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // ========== REPLY TICKET ==========
   const handleReplyTicket = async (ticketId) => {
     const reply = ticketReply[ticketId]?.trim();
     if (!reply) {
@@ -362,7 +488,7 @@ function AdminDashboard() {
     }
   };
 
-  // ================= PDF DOWNLOAD =================
+  // ========== DOWNLOAD PDF ==========
   const downloadTimetablePDF = async () => {
     if (filteredTimetable.length === 0) {
       alert("No timetable entries to download");
@@ -394,7 +520,7 @@ function AdminDashboard() {
       );
       yPosition += 10;
 
-      // Summary statistics
+      // Summary
       const totalSessions = filteredTimetable.length;
       const publishedSessions = filteredTimetable.filter(
         (s) => s.status === "published",
@@ -408,57 +534,36 @@ function AdminDashboard() {
       pdf.text(`Assigned: ${assignedSessions}`, margin + 120, yPosition);
       yPosition += 15;
 
-      // Group sessions by day and time for the grid
-      const groupedData = {};
-      filteredTimetable.forEach((session) => {
-        const day = session.day;
-        const timeSlot = `${session.startTime}-${session.endTime}`;
-        if (!groupedData[day]) groupedData[day] = {};
-        if (!groupedData[day][timeSlot]) groupedData[day][timeSlot] = [];
-        groupedData[day][timeSlot].push(session);
-      });
-
-      // Create timetable grid
-      const timeSlots = [
-        ...new Set(filteredTimetable.map((s) => `${s.startTime}-${s.endTime}`)),
-      ].sort();
-      const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-
-      // Table headers
+      // Grid data
       pdf.setFontSize(10);
       pdf.setFont("helvetica", "bold");
-
-      // Time column header
       pdf.text("Time", margin, yPosition);
       let xPosition = margin + 25;
 
-      // Day headers
-      days.forEach((day) => {
+      weekdays.forEach((day) => {
         pdf.text(day.substring(0, 3), xPosition, yPosition);
         xPosition += 35;
       });
       yPosition += 8;
 
-      // Draw table lines
       pdf.setLineWidth(0.5);
-      pdf.line(margin, yPosition - 5, xPosition - 5, yPosition - 5); // Top line
+      pdf.line(margin, yPosition - 5, xPosition - 5, yPosition - 5);
 
-      // Table content
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(8);
 
-      timeSlots.forEach((timeSlot) => {
+      timeSlots.forEach((slot) => {
         if (yPosition > pageHeight - 30) {
           pdf.addPage();
           yPosition = margin;
         }
 
-        // Time column
-        pdf.text(timeSlot.replace("-", "-"), margin, yPosition);
+        pdf.text(`${slot.startTime}-${slot.endTime}`, margin, yPosition);
         xPosition = margin + 25;
 
-        days.forEach((day) => {
-          const sessions = groupedData[day]?.[timeSlot] || [];
+        weekdays.forEach((day) => {
+          const slotKey = `${slot.startTime}-${slot.endTime}`;
+          const sessions = groupedByDayAndSlot[day]?.[slotKey] || [];
           let cellText = "";
 
           if (sessions.length > 0) {
@@ -472,35 +577,24 @@ function AdminDashboard() {
             cellText = "-";
           }
 
-          // Draw cell border
           pdf.rect(xPosition - 2, yPosition - 5, 33, 15);
-
-          // Add text
           const lines = pdf.splitTextToSize(cellText, 30);
           pdf.text(lines, xPosition, yPosition);
-
           xPosition += 35;
         });
 
         yPosition += 18;
       });
 
-      // Add new page for detailed module information
+      // Detailed module information
       pdf.addPage();
       yPosition = margin;
-
-      // Detailed Module Information Section
       pdf.setFontSize(16);
       pdf.setFont("helvetica", "bold");
       pdf.text("Detailed Module Information", pageWidth / 2, yPosition, {
         align: "center",
       });
       yPosition += 20;
-
-      // Get unique modules
-      const uniqueModules = [
-        ...new Set(filteredTimetable.map((s) => s.module?._id).filter(Boolean)),
-      ];
 
       pdf.setFontSize(12);
       pdf.setFont("helvetica", "normal");
@@ -513,14 +607,12 @@ function AdminDashboard() {
           yPosition = margin;
         }
 
-        // Module header
         pdf.setFont("helvetica", "bold");
         pdf.setFontSize(11);
         const moduleTitle = `${session.module.code} - ${session.module.name}`;
         pdf.text(moduleTitle, margin, yPosition);
         yPosition += 8;
 
-        // Module details
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(9);
 
@@ -551,7 +643,6 @@ function AdminDashboard() {
         pdf.text(`Status: ${session.status}`, margin + 5, yPosition);
         yPosition += 6;
 
-        // Module description/topics
         if (session.module.description) {
           pdf.text(
             `Topics: ${session.module.description}`,
@@ -561,14 +652,12 @@ function AdminDashboard() {
           yPosition += 8;
         }
 
-        // Separator line
         pdf.setLineWidth(0.3);
         pdf.line(margin, yPosition, pageWidth - margin, yPosition);
         yPosition += 10;
       });
 
-      // Save the PDF
-      const fileName = `Timetable_Detailed_${batchName}_${new Date().toISOString().split("T")[0]}.pdf`;
+      const fileName = `Timetable_${batchName}_${new Date().toISOString().split("T")[0]}.pdf`;
       pdf.save(fileName);
     } catch (error) {
       console.error("Error generating PDF:", error);
@@ -576,193 +665,41 @@ function AdminDashboard() {
     }
   };
 
-  useEffect(() => {
-    fetchUsers();
-    fetchAuditLogs();
-    fetchTickets();
-    fetchTimetable();
-    const interval = setInterval(() => {
-      fetchTimetable();
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // ================= CREATE USER =================
-
-  const handleCreateUser = async () => {
-    if (!name || !email || !password) {
-      alert("All fields are required");
-      return;
-    }
-
-    if (role === "lic" && !moduleCode) {
-      alert("Module code is required for LIC users");
-      return;
-    }
-
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!emailPattern.test(email)) {
-      alert("Invalid email format");
-      return;
-    }
-
-    // PASSWORD VALIDATION
-    if (password.length < 8 || password.length > 12) {
-      alert("Password must be between 8 and 12 characters");
-      return;
-    }
-
-    try {
-      await API.post("/auth/create-user", {
-        name,
-        email,
-        password,
-        role,
-        moduleCode: role === "lic" ? moduleCode : undefined,
-      });
-
-      alert("User created successfully");
-
-      setName("");
-      setEmail("");
-      setPassword("");
-      setRole("lic");
-      setModuleCode("");
-      setModuleSearch("");
-
-      fetchUsers();
-      fetchAuditLogs();
-    } catch (error) {
-      alert(error.response?.data?.message || "Error creating user");
-    }
-  };
-
-  // ================= PUBLISH TIMETABLE =================
-
-  const handlePublishTimetable = async () => {
-    if (!publishMessage.trim()) {
-      alert("Please enter a message");
-      return;
-    }
-
-    if (publishMessage.length < 1 || publishMessage.length > 100) {
-      alert("Message must be between 1 and 100 characters");
-      return;
-    }
-
-    try {
-      await API.post("/timetable/publish", {
-        message: publishMessage,
-      });
-
-      alert("Timetable published successfully ✅");
-      setPublishMessage("");
-      fetchAuditLogs();
-    } catch (error) {
-      alert(error.response?.data?.message || "Failed to publish timetable");
-    }
-  };
-
-  // ================= DELETE =================
-
-  const handleDelete = async (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this user?",
-    );
-
-    if (!confirmDelete) return;
-
-    try {
-      await API.delete(`/auth/delete-user/${id}`);
-      fetchUsers();
-      fetchAuditLogs();
-    } catch (error) {
-      alert(error.response?.data?.message || "Error deleting user");
-    }
-  };
-
-  // ================= STATUS =================
-
-  const handleStatusChange = async (id, currentStatus) => {
-    try {
-      const newStatus = currentStatus === "active" ? "suspended" : "active";
-
-      await API.put(`/auth/update-status/${id}`, {
-        status: newStatus,
-      });
-
-      fetchUsers();
-      fetchAuditLogs();
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  // ================= FILTER =================
-
-  const filteredUsers = users.filter((user) => {
-    const matchesRole = filterRole === "all" || user.role === filterRole;
-
-    const search = searchTerm.toLowerCase();
-
-    const matchesSearch =
-      user.name.toLowerCase().includes(search) ||
-      user.email.toLowerCase().includes(search) ||
-      user.role.toLowerCase().includes(search);
-
-    return matchesRole && matchesSearch;
-  });
-
-  // ================= STATS =================
-
-  const totalUsers = users.length;
-
-  const activeUsers = users.filter((user) => user.status === "active").length;
-
-  const suspendedUsers = users.filter(
-    (user) => user.status === "suspended",
-  ).length;
-
-  // ================= UI =================
-
   return (
     <>
       <Navbar />
 
       <div className="admin-page">
-        {/* HERO */}
+        {/* ========== HERO ========== */}
         <div className="admin-hero">
           <h1>Admin Dashboard</h1>
-          <p>Manage users, roles and system access.</p>
+          <p>Manage users, roles, timetables, and system access</p>
         </div>
 
-        {/* RAISE TICKET BUTTON */}
-        <div style={{ marginBottom: "20px" }}>
+        {/* ========== RAISE TICKET ========== */}
+        <div className="action-buttons">
           <button className="primary-btn" onClick={() => navigate("/ticket")}>
-            Raise Ticket
+            🎫 Raise Ticket
           </button>
         </div>
 
-        {/* STATS CARDS */}
+        {/* ========== STATS CARDS ========== */}
         <div className="stats-grid">
           <div className="stat-card stat-blue">
             <span className="stat-title">Total Users</span>
             <h2>{totalUsers}</h2>
           </div>
-
           <div className="stat-card stat-green">
             <span className="stat-title">Active Users</span>
             <h2>{activeUsers}</h2>
           </div>
-
           <div className="stat-card stat-yellow">
             <span className="stat-title">Suspended Users</span>
             <h2>{suspendedUsers}</h2>
           </div>
         </div>
 
-        {/* CREATE USER */}
+        {/* ========== CREATE USER ========== */}
         <div className="admin-card">
           <h3>Create New User</h3>
 
@@ -773,21 +710,18 @@ function AdminDashboard() {
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
-
             <input
               type="email"
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-
             <input
               type="password"
               placeholder="Password (8-12 characters)"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-
             <select value={role} onChange={(e) => setRole(e.target.value)}>
               <option value="lic">LIC</option>
               <option value="coordinator">Academic Coordinator</option>
@@ -795,7 +729,6 @@ function AdminDashboard() {
             </select>
           </div>
 
-          {/* MODULE CODE FOR LIC */}
           {role === "lic" && (
             <div className="module-code-section">
               <input
@@ -805,7 +738,6 @@ function AdminDashboard() {
                 onChange={(e) => setModuleSearch(e.target.value)}
                 className="module-search-input"
               />
-
               <select
                 value={moduleCode}
                 onChange={(e) => setModuleCode(e.target.value)}
@@ -826,8 +758,10 @@ function AdminDashboard() {
           </button>
         </div>
 
-        {/* USERS */}
+        {/* ========== USERS TABLE ========== */}
         <div className="admin-card">
+          <h3>All Users</h3>
+
           <div className="top-bar">
             <input
               type="text"
@@ -836,7 +770,6 @@ function AdminDashboard() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
             />
-
             <select
               value={filterRole}
               onChange={(e) => setFilterRole(e.target.value)}
@@ -849,104 +782,88 @@ function AdminDashboard() {
             </select>
           </div>
 
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Module Code</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {filteredUsers.map((user) => (
-                <tr key={user._id}>
-                  <td>{user.name}</td>
-                  <td>{user.email}</td>
-                  <td>{user.role}</td>
-                  <td>
-                    {user.role === "lic"
-                      ? user.moduleCode || (
-                          <span className="not-assigned">Not Assigned</span>
-                        )
-                      : "-"}
-                  </td>
-                  <td>
-                    <span className={`status ${user.status}`}>
-                      {user.status}
-                    </span>
-                  </td>
-                  <td>
-                    <button
-                      className="warning-btn"
-                      onClick={() => handleStatusChange(user._id, user.status)}
-                    >
-                      {user.status === "active" ? "Suspend" : "Activate"}
-                    </button>
-
-                    {user.role !== "admin" && (
-                      <button
-                        className="danger-btn"
-                        onClick={() => handleDelete(user._id)}
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-
-              {filteredUsers.length === 0 && (
+          <div className="table-wrapper">
+            <table className="admin-table">
+              <thead>
                 <tr>
-                  <td colSpan="6" className="no-data">
-                    No users found
-                  </td>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Module Code</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredUsers.map((user) => (
+                  <tr key={user._id}>
+                    <td>{user.name}</td>
+                    <td>{user.email}</td>
+                    <td>
+                      <span className="role-badge">{user.role}</span>
+                    </td>
+                    <td>
+                      {user.role === "lic"
+                        ? user.moduleCode || (
+                            <span className="not-assigned">Not Assigned</span>
+                          )
+                        : "-"}
+                    </td>
+                    <td>
+                      <span className={`status ${user.status}`}>
+                        {user.status}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="action-btns">
+                        <button
+                          className="warning-btn"
+                          onClick={() =>
+                            handleStatusChange(user._id, user.status)
+                          }
+                        >
+                          {user.status === "active" ? "Suspend" : "Activate"}
+                        </button>
+                        {user.role !== "admin" && (
+                          <button
+                            className="danger-btn"
+                            onClick={() => handleDelete(user._id)}
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filteredUsers.length === 0 && (
+                  <tr>
+                    <td colSpan="6" className="no-data">
+                      No users found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        {/* LIC TIMETABLE GRID VIEW */}
+        {/* ========== TIMETABLE GRID ========== */}
         <div className="admin-card">
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "15px",
-            }}
-          >
+          <div className="card-header">
             <h3>LIC Timetable Grid ({filteredTimetable.length})</h3>
-            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <div className="header-actions">
               <button
+                className="download-btn"
                 onClick={downloadTimetablePDF}
-                style={{
-                  padding: "8px 16px",
-                  backgroundColor: "#4CAF50",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "5px",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                }}
                 disabled={filteredTimetable.length === 0}
               >
-                📄 Download Detailed PDF
+                📄 Download PDF
               </button>
               <select
                 value={selectedTimetableBatch}
                 onChange={(e) => setSelectedTimetableBatch(e.target.value)}
-                style={{
-                  padding: "8px 12px",
-                  borderRadius: "5px",
-                  border: "1px solid #ddd",
-                  fontSize: "14px",
-                  cursor: "pointer",
-                }}
+                className="filter-select"
               >
                 <option value="">All Batches</option>
                 {batchOptions.map((batch) => (
@@ -957,41 +874,17 @@ function AdminDashboard() {
               </select>
             </div>
           </div>
+
           {filteredTimetable.length === 0 ? (
-            <p style={{ color: "#888" }}>No timetable entries.</p>
+            <p className="empty-message">No timetable entries</p>
           ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table
-                id="timetable-table"
-                className="lic-table"
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  fontSize: "12px",
-                }}
-              >
+            <div className="timetable-wrapper">
+              <table className="timetable-grid">
                 <thead>
-                  <tr style={{ backgroundColor: "#f5f5f5" }}>
-                    <th
-                      style={{
-                        border: "1px solid #ddd",
-                        padding: "8px",
-                        minWidth: "100px",
-                      }}
-                    >
-                      Time
-                    </th>
+                  <tr>
+                    <th className="time-column">Time</th>
                     {weekdays.map((day) => (
-                      <th
-                        key={day}
-                        style={{
-                          border: "1px solid #ddd",
-                          padding: "8px",
-                          minWidth: "140px",
-                        }}
-                      >
-                        {day}
-                      </th>
+                      <th key={day}>{day}</th>
                     ))}
                   </tr>
                 </thead>
@@ -1000,15 +893,7 @@ function AdminDashboard() {
                     const slotKey = `${slot.startTime}-${slot.endTime}`;
                     return (
                       <tr key={slotKey}>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "8px",
-                            fontWeight: "bold",
-                            backgroundColor: "#f9f9f9",
-                            minWidth: "100px",
-                          }}
-                        >
+                        <td className="time-cell">
                           {slot.startTime}-{slot.endTime}
                         </td>
                         {weekdays.map((day) => {
@@ -1017,50 +902,28 @@ function AdminDashboard() {
                           return (
                             <td
                               key={`${day}-${slotKey}`}
-                              style={{
-                                border: "1px solid #ddd",
-                                padding: "4px",
-                                verticalAlign: "top",
-                              }}
+                              className="session-cell"
                             >
                               {sessions.map((s) => (
-                                <div
-                                  key={s._id}
-                                  style={{
-                                    marginBottom: "4px",
-                                    padding: "4px",
-                                    border: "1px solid #ccc",
-                                    borderRadius: "3px",
-                                    backgroundColor: "#fafafa",
-                                    fontSize: "11px",
-                                  }}
-                                >
-                                  <div>
-                                    <strong>{s.module?.code}</strong>
+                                <div key={s._id} className="session-card">
+                                  <div className="session-module">
+                                    {s.module?.code}
                                   </div>
-                                  <div>
+                                  <div className="session-lecturer">
                                     {s.lecturer
                                       ? s.lecturer.lecturerTitle
                                         ? `${s.lecturer.lecturerTitle} ${s.lecturer.name}`
                                         : s.lecturer.name
-                                      : "N/A"}
+                                      : "Unassigned"}
                                   </div>
-                                  <div>
-                                    Batch: {s.batchGroup?.batchNo || "N/A"}
-                                  </div>
-                                  <div>Hall: {s.hall?.name || "N/A"}</div>
-                                  <div>
-                                    <span
-                                      style={{
-                                        color:
-                                          s.status === "published"
-                                            ? "green"
-                                            : "orange",
-                                        fontWeight: "bold",
-                                      }}
-                                    >
-                                      {s.status}
+                                  <div className="session-details">
+                                    <span>
+                                      📚 {s.batchGroup?.batchNo || "N/A"}
                                     </span>
+                                    <span>🏛️ {s.hall?.name || "N/A"}</span>
+                                  </div>
+                                  <div className={`session-status ${s.status}`}>
+                                    {s.status}
                                   </div>
                                 </div>
                               ))}
@@ -1076,10 +939,9 @@ function AdminDashboard() {
           )}
         </div>
 
-        {/* PUBLISH TIMETABLE */}
+        {/* ========== PUBLISH TIMETABLE ========== */}
         <div className="admin-card">
           <h3>Publish Final Timetable</h3>
-
           <div className="publish-section">
             <input
               type="text"
@@ -1089,9 +951,7 @@ function AdminDashboard() {
               maxLength={100}
               className="publish-input"
             />
-
             <span className="char-count">{publishMessage.length}/100</span>
-
             <button
               className="primary-btn publish-btn"
               onClick={handlePublishTimetable}
@@ -1101,13 +961,13 @@ function AdminDashboard() {
           </div>
         </div>
 
-        {/* TICKETS */}
+        {/* ========== TICKETS ========== */}
         <div className="admin-card">
           <h3>Received Tickets ({tickets.length})</h3>
           {tickets.length === 0 ? (
-            <p style={{ color: "#888" }}>No tickets received.</p>
+            <p className="empty-message">No tickets received</p>
           ) : (
-            <div className="audit-scroll">
+            <div className="table-wrapper">
               <table className="admin-table">
                 <thead>
                   <tr>
@@ -1122,18 +982,18 @@ function AdminDashboard() {
                 <tbody>
                   {tickets.map((ticket) => (
                     <tr key={ticket._id}>
-                      <td>{ticket.ticketId}</td>
+                      <td>
+                        <strong>{ticket.ticketId}</strong>
+                      </td>
                       <td>
                         {ticket.sender?.name || "Unknown"}
                         <br />
-                        <small>{ticket.sender?.role}</small>
+                        <small className="role-badge">
+                          {ticket.sender?.role}
+                        </small>
                       </td>
                       <td>{ticket.subject}</td>
-                      <td
-                        style={{ maxWidth: "200px", wordBreak: "break-word" }}
-                      >
-                        {ticket.message}
-                      </td>
+                      <td className="message-cell">{ticket.message}</td>
                       <td>
                         <span className={`status ${ticket.status}`}>
                           {ticket.status}
@@ -1141,11 +1001,9 @@ function AdminDashboard() {
                       </td>
                       <td>
                         {ticket.status === "replied" ? (
-                          <span style={{ color: "#28a745" }}>
-                            {ticket.reply}
-                          </span>
+                          <span className="replied-text">{ticket.reply}</span>
                         ) : (
-                          <div style={{ display: "flex", gap: "6px" }}>
+                          <div className="reply-box">
                             <input
                               type="text"
                               placeholder="Write reply..."
@@ -1156,16 +1014,10 @@ function AdminDashboard() {
                                   [ticket._id]: e.target.value,
                                 }))
                               }
-                              style={{
-                                padding: "6px",
-                                borderRadius: "4px",
-                                border: "1px solid #ccc",
-                                flex: 1,
-                              }}
+                              className="reply-input"
                             />
                             <button
                               className="primary-btn"
-                              style={{ padding: "6px 12px", fontSize: "13px" }}
                               onClick={() => handleReplyTicket(ticket._id)}
                             >
                               Send
@@ -1181,10 +1033,9 @@ function AdminDashboard() {
           )}
         </div>
 
-        {/* AUDIT LOGS */}
+        {/* ========== AUDIT LOGS ========== */}
         <div className="admin-card">
           <h3>Audit Logs</h3>
-
           <div className="audit-scroll">
             <table className="admin-table">
               <thead>
@@ -1195,7 +1046,6 @@ function AdminDashboard() {
                   <th>Time</th>
                 </tr>
               </thead>
-
               <tbody>
                 {auditLogs.map((log) => (
                   <tr key={log._id}>
@@ -1213,4 +1063,5 @@ function AdminDashboard() {
     </>
   );
 }
+
 export default AdminDashboard;
